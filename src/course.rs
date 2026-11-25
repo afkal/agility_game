@@ -424,6 +424,7 @@ pub fn rebuild_course(
     mut restart: ResMut<RestartRequested>,
     layout: Res<CourseLayout>,
     existing: Query<Entity, With<CourseEntity>>,
+    state: Res<State<GameState>>,
     mut next_state: ResMut<NextState<GameState>>,
 ) {
     if !restart.0 {
@@ -438,7 +439,11 @@ pub fn rebuild_course(
     reset_collecting(&mut commands);
     commands.insert_resource(ScrollSpeed::default());
     commands.insert_resource(scroll_with_home_at(layout.start_x));
-    next_state.set(GameState::Playing);
+    // The course is built behind the welcome screen; the run starts only once
+    // the dog has a name.
+    if *state.get() != GameState::NameEntry {
+        next_state.set(GameState::Playing);
+    }
 }
 
 fn spawn_course(commands: &mut Commands, layout: &CourseLayout) {
@@ -482,12 +487,9 @@ fn spawn_course(commands: &mut Commands, layout: &CourseLayout) {
     ));
 
     let start_surface = layout.surface_at(layout.start_x).unwrap_or(GROUND_TOP);
-    let feet = Vec2::new(layout.start_x, start_surface);
-    commands.spawn((
-        CourseEntity,
-        Dog::standing_at(feet),
-        Transform::from_translation(feet.extend(10.0)),
-    ));
+    let dog = Dog::standing_at(Vec2::new(layout.start_x, start_surface));
+    let transform = Transform::from_translation(dog.body.center.extend(10.0));
+    commands.spawn((CourseEntity, dog, transform));
 }
 
 fn spawn_part(commands: &mut Commands, part: CoursePart) {

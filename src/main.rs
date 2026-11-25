@@ -3,6 +3,7 @@ mod collect;
 mod course;
 mod hazards;
 mod hud;
+mod name_entry;
 mod physics;
 mod player;
 mod rules;
@@ -11,6 +12,7 @@ mod visuals;
 
 use bevy::{prelude::*, window::WindowResolution};
 
+use name_entry::NameEntryPlugin;
 use rules::{RulesPlugin, WINDOW_HEIGHT, WINDOW_WIDTH};
 use visuals::VisualsPlugin;
 
@@ -24,7 +26,7 @@ fn main() {
             }),
             ..default()
         }))
-        .add_plugins((RulesPlugin, VisualsPlugin))
+        .add_plugins((RulesPlugin, VisualsPlugin, NameEntryPlugin))
         .add_systems(Update, exit_on_esc)
         .run();
 }

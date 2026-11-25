@@ -33,7 +33,9 @@ pub const MAX_FRAME_DELTA: f32 = 1.0 / 30.0;
 
 #[derive(States, Default, Clone, Copy, Eq, PartialEq, Hash, Debug)]
 pub enum GameState {
+    /// The welcome screen, where the player names their dog.
     #[default]
+    NameEntry,
     Playing,
     Finished,
 }
@@ -143,6 +145,16 @@ pub mod test_support {
 
     /// Like `rules_app`, on the given course.
     pub fn rules_app_with(layout: CourseLayout) -> App {
+        let mut app = rules_app_on_welcome_screen(layout);
+        app.world_mut()
+            .resource_mut::<NextState<GameState>>()
+            .set(GameState::Playing);
+        app.update();
+        app
+    }
+
+    /// The rules app as it starts up, still on the welcome screen.
+    pub fn rules_app_on_welcome_screen(layout: CourseLayout) -> App {
         let mut app = App::new();
         app.insert_resource(layout);
         app.add_plugins((MinimalPlugins, StatesPlugin))
@@ -233,6 +245,18 @@ mod tests {
         step(&mut app, 1.0);
         let moved = position(&app) - start;
         assert!((moved - NORMAL_SCROLL_SPEED * MAX_FRAME_DELTA).abs() < 0.01);
+    }
+
+    #[test]
+    fn course_waits_on_the_welcome_screen() {
+        let mut app = rules_app_on_welcome_screen(CourseLayout::flat(50_000.0));
+        let start = position(&app);
+        run_for(&mut app, 1.0);
+        assert_eq!(
+            *app.world().resource::<State<GameState>>().get(),
+            GameState::NameEntry
+        );
+        assert_eq!(position(&app), start);
     }
 
     #[test]

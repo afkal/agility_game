@@ -5,6 +5,7 @@ use bevy::prelude::*;
 use crate::art::{self, HEART_EMPTY, HEART_RED, HeartPiece, Painter};
 use crate::collect::{CELEBRATION_MIN_TIME, CelebrationTime, GingerbreadCount};
 use crate::hazards::{Hearts, STARTING_HEARTS};
+use crate::name_entry::DogName;
 use crate::rules::{GameState, WINDOW_HEIGHT, WINDOW_WIDTH};
 use crate::visuals::MainCamera;
 
@@ -131,6 +132,7 @@ fn spawn_finish_screen(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     count: Res<GingerbreadCount>,
+    dog_name: Res<DogName>,
     mut painter: Painter,
     camera: Query<Entity, With<MainCamera>>,
 ) {
@@ -173,7 +175,8 @@ fn spawn_finish_screen(
                     ));
                     screen.spawn((
                         Text::new(format!(
-                            "The dog brought {} gingerbread {cookies}!",
+                            "{} brought {} gingerbread {cookies}!",
+                            dog_name.display(),
                             count.0
                         )),
                         TextFont {
