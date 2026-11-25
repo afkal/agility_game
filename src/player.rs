@@ -5,11 +5,11 @@ use bevy::prelude::*;
 use crate::physics::{self, Body, Solid};
 use crate::rules::{frame_delta, ScrollPosition, ScrollSpeed};
 
-pub const GRAVITY: f32 = 1875.0;
-pub const JUMP_VELOCITY: f32 = 750.0;
+pub const GRAVITY: f32 = 1800.0;
+pub const JUMP_VELOCITY: f32 = 800.0;
 
 /// The dog's collision box (body and feet), smaller than its picture.
-pub const DOG_HALF_SIZE: Vec2 = Vec2::new(36.0, 34.0);
+pub const DOG_HALF_SIZE: Vec2 = Vec2::new(30.0, 34.0);
 
 /// Where the dog normally runs, measured from the left edge of the view.
 pub const HOME_FROM_LEFT_EDGE: f32 = 320.0;
@@ -128,6 +128,14 @@ mod tests {
     /// Rules app with the given solids and a dog standing at its home position.
     fn app_with(solids: Vec<Solid>) -> (App, Entity) {
         let mut app = rules_app();
+        let course_dogs: Vec<Entity> = app
+            .world_mut()
+            .query_filtered::<Entity, With<Dog>>()
+            .iter(app.world())
+            .collect();
+        for entity in course_dogs {
+            app.world_mut().despawn(entity);
+        }
         app.insert_resource(CourseSolids(solids));
         let home = home_x(app.world().resource::<ScrollPosition>());
         let dog = app

@@ -5,6 +5,7 @@
 
 use bevy::prelude::*;
 
+use crate::course::{rebuild_course, CourseLayout, RestartRequested};
 use crate::player::{buffer_jump_input, move_dog, CourseSolids};
 
 pub const WINDOW_WIDTH: f32 = 1280.0;
@@ -64,10 +65,15 @@ pub struct RulesPlugin;
 
 impl Plugin for RulesPlugin {
     fn build(&self, app: &mut App) {
+        if !app.world().contains_resource::<CourseLayout>() {
+            app.insert_resource(CourseLayout::christmas());
+        }
         app.init_state::<GameState>()
+            .init_resource::<RestartRequested>()
             .init_resource::<ScrollSpeed>()
             .init_resource::<ScrollPosition>()
             .init_resource::<CourseSolids>()
+            .add_systems(PreUpdate, rebuild_course)
             .add_systems(
                 Update,
                 (adjust_scroll_speed, advance_scroll, buffer_jump_input, move_dog)
@@ -105,9 +111,16 @@ pub mod test_support {
 
     use super::*;
 
-    /// A headless app running only the rules, with time advanced by hand.
+    /// A headless app running only the rules on a long flat course, with time
+    /// advanced by hand.
     pub fn rules_app() -> App {
+        rules_app_with(CourseLayout::flat(50_000.0))
+    }
+
+    /// Like `rules_app`, on the given course.
+    pub fn rules_app_with(layout: CourseLayout) -> App {
         let mut app = App::new();
+        app.insert_resource(layout);
         app.add_plugins((MinimalPlugins, StatesPlugin))
             .init_resource::<ButtonInput<KeyCode>>()
             .add_plugins(RulesPlugin);

@@ -1,3 +1,4 @@
+mod course;
 mod physics;
 mod player;
 mod rules;
