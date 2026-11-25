@@ -47,6 +47,7 @@ impl Plugin for VisualsPlugin {
                     draw_snowballs,
                     draw_finish,
                     draw_dog,
+                    tilt_dog,
                 ),
             )
             .add_systems(
@@ -420,6 +421,33 @@ fn draw_finish(
     }
 }
 
+/// The dog's picture, tilted smoothly to follow the slope it stands on.
+#[derive(Component)]
+struct DogPicture {
+    angle: f32,
+}
+
+/// How quickly the picture turns towards the slope angle, per second.
+const TILT_RATE: f32 = 12.0;
+
+fn tilt_dog(
+    time: Res<Time>,
+    dogs: Query<(&Dog, &Children)>,
+    mut pictures: Query<(&mut DogPicture, &mut Transform)>,
+) {
+    let blend = (time.delta_secs() * TILT_RATE).min(1.0);
+    for (dog, children) in &dogs {
+        // Level out in the air; follow the ground otherwise.
+        let target = dog.ground_angle.unwrap_or(0.0);
+        for child in children.iter() {
+            if let Ok((mut picture, mut transform)) = pictures.get_mut(child) {
+                picture.angle += (target - picture.angle) * blend;
+                transform.rotation = Quat::from_rotation_z(picture.angle);
+            }
+        }
+    }
+}
+
 fn draw_dog(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -439,31 +467,34 @@ fn draw_dog(
                             ..default()
                         },
                         Transform::from_xyz(0.0, 2.0, 0.0),
+                        DogPicture { angle: 0.0 },
                     ))
                     .with_children(|picture| santa_hat(picture, &mut painter));
             });
     }
 }
 
-/// A Santa hat sitting on the dog's head, leaning back.
+/// A Santa hat sitting on the dog's head, leaning back. It is sized to the
+/// head in the silhouette, which is narrow, so the brim does not reach past
+/// the dog's nose.
 fn santa_hat(parent: &mut ChildSpawnerCommands, painter: &mut Painter) {
-    let brim = Vec2::new(36.0, 33.0);
+    let brim = Vec2::new(31.0, 32.0);
     parent.spawn(painter.triangle(
-        brim + Vec2::new(-20.0, 0.0),
-        brim + Vec2::new(18.0, 2.0),
-        brim + Vec2::new(-26.0, 34.0),
+        brim + Vec2::new(-10.0, 0.0),
+        brim + Vec2::new(10.0, 1.0),
+        brim + Vec2::new(-15.0, 21.0),
         art::CANDY_RED,
         0.2,
     ));
     parent.spawn(painter.shape(
-        Capsule2d::new(5.5, 34.0),
+        Capsule2d::new(3.5, 16.0),
         art::SNOW_WHITE,
         brim.extend(0.3),
         FRAC_PI_2 - 0.05,
     ));
     parent.spawn(painter.circle(
-        6.5,
+        4.5,
         art::SNOW_WHITE,
-        (brim + Vec2::new(-27.0, 34.0)).extend(0.3),
+        (brim + Vec2::new(-16.0, 21.0)).extend(0.3),
     ));
 }

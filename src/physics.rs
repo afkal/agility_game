@@ -57,6 +57,11 @@ impl Ramp {
         let t = (x - self.start.x) / (self.end.x - self.start.x);
         Some(self.start.y + t * (self.end.y - self.start.y))
     }
+
+    /// Slope of the ramp in radians, positive when it rises to the right.
+    pub fn angle(&self) -> f32 {
+        (self.end.y - self.start.y).atan2(self.end.x - self.start.x)
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -89,6 +94,16 @@ impl Body {
 pub struct StepOutcome {
     /// The body tried to move sideways and a box stopped it.
     pub blocked: bool,
+    /// Slope of the surface the body is standing on, in radians (0 on flat
+    /// ground, positive uphill to the right), or `None` while airborne.
+    pub ground_angle: Option<f32>,
+}
+
+fn highest(current: Option<(f32, f32)>, candidate: (f32, f32)) -> Option<(f32, f32)> {
+    match current {
+        Some(best) if best.0 >= candidate.0 => Some(best),
+        _ => Some(candidate),
+    }
 }
 
 /// Move `body` by its velocity over `dt` seconds, applying `gravity` and
@@ -140,7 +155,8 @@ pub fn step(body: &mut Body, solids: &[Solid], gravity: f32, dt: f32) -> StepOut
     let current = body.aabb();
     let dy = body.velocity.y * dt;
     let new_bottom = current.min.y + dy;
-    let mut landed_on: Option<f32> = None;
+    // Highest surface landed on, as (height, slope angle).
+    let mut landed_on: Option<(f32, f32)> = None;
     let mut ceiling: Option<f32> = None;
 
     for solid in solids {
@@ -155,7 +171,7 @@ pub fn step(body: &mut Body, solids: &[Solid], gravity: f32, dt: f32) -> StepOut
                     && current.min.y >= b.max.y - EPSILON
                     && new_bottom <= b.max.y
                 {
-                    landed_on = Some(landed_on.map_or(b.max.y, |h: f32| h.max(b.max.y)));
+                    landed_on = highest(landed_on, (b.max.y, 0.0));
                 } else if body.velocity.y > 0.0
                     && current.max.y <= b.min.y + EPSILON
                     && current.max.y + dy > b.min.y
@@ -175,13 +191,14 @@ pub fn step(body: &mut Body, solids: &[Solid], gravity: f32, dt: f32) -> StepOut
                 // allow that as long as the feet were not far below it.
                 let feet_near_or_above = current.min.y >= surface - RAMP_SNAP;
                 if feet_near_or_above && new_bottom <= surface + tolerance {
-                    landed_on = Some(landed_on.map_or(surface, |h: f32| h.max(surface)));
+                    landed_on = highest(landed_on, (surface, r.angle()));
                 }
             }
         }
     }
 
-    if let Some(surface) = landed_on {
+    if let Some((surface, angle)) = landed_on {
+        outcome.ground_angle = Some(angle);
         body.center.y = surface + body.half.y;
         body.velocity.y = 0.0;
         body.grounded = true;
@@ -324,6 +341,30 @@ mod tests {
         assert!(body.grounded);
         assert!(body.center.x > 400.0);
         assert!((body.bottom() + 150.0).abs() < 0.5);
+    }
+
+    #[test]
+    fn step_reports_the_slope_underfoot() {
+        let up = Ramp {
+            start: Vec2::new(100.0, -300.0),
+            end: Vec2::new(400.0, -150.0),
+        };
+        let mut body = standing_at(0.0, -300.0);
+        assert_eq!(
+            step(&mut body, &[ground()], GRAVITY, DT).ground_angle,
+            Some(0.0)
+        );
+
+        let mut body = standing_at(250.0, up.height_at(250.0).unwrap());
+        let angle = step(&mut body, &[ground(), Solid::Ramp(up)], GRAVITY, DT).ground_angle;
+        assert!(
+            (angle.unwrap() - 0.5_f32.atan()).abs() < 1e-4,
+            "angle {angle:?}"
+        );
+
+        let mut body = standing_at(0.0, -300.0);
+        body.velocity.y = 800.0;
+        assert_eq!(step(&mut body, &[ground()], GRAVITY, DT).ground_angle, None);
     }
 
     #[test]

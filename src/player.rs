@@ -37,6 +37,9 @@ pub struct Dog {
     pub jump_buffer: f32,
     /// The dog tried to run forward this frame and an obstacle stopped it.
     pub blocked: bool,
+    /// Slope underfoot in radians, or `None` in the air. The picture tilts
+    /// to match it.
+    pub ground_angle: Option<f32>,
 }
 
 impl Dog {
@@ -51,6 +54,7 @@ impl Dog {
             coyote: COYOTE_TIME,
             jump_buffer: 0.0,
             blocked: false,
+            ground_angle: Some(0.0),
         }
     }
 
@@ -108,6 +112,7 @@ pub fn move_dog(
 
         let outcome = physics::step(&mut dog.body, &solids.0, GRAVITY, dt);
         dog.blocked = outcome.blocked;
+        dog.ground_angle = outcome.ground_angle;
 
         if dog.body.grounded {
             dog.coyote = COYOTE_TIME;
