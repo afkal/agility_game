@@ -1,22 +1,17 @@
 [package]
 name = "agility_game"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-# NOTE: Remember to revert this before releasing your game!
-# Otherwise you will need to include libbevy_dylib alongside your game if you want it to run.
-# If you remove the "dynamic" feature, your game executable can run standalone.
-# bevy = { version = "0.7.0", features = ["dynamic"] }
-bevy = "0.7.0"
-bevy_rapier2d = "0.14.0"
-rand = "0.8"
-#wasm-bindgen = "0.2"
+bevy = "0.20.1"
+rand = "0.10.4"
 
-[target.wasm32-unknown-unknown]
-runner = "wasm-server-runner"
+# Bevy recommends optimizing dependencies even in dev builds; the game code itself stays fast to compile.
+[profile.dev]
+opt-level = 1
 
-[workspace]
-resolver = "2"
+[profile.dev.package."*"]
+opt-level = 3
