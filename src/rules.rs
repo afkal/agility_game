@@ -6,6 +6,10 @@
 use bevy::prelude::*;
 
 use crate::course::{rebuild_course, CourseLayout, RestartRequested};
+use crate::hazards::{
+    check_hazards, move_snowballs, spawn_due_snowballs, track_checkpoints, Hearts, LatestCheckpoint,
+    RespawnGrace,
+};
 use crate::player::{buffer_jump_input, move_dog, CourseSolids};
 
 pub const WINDOW_WIDTH: f32 = 1280.0;
@@ -73,10 +77,22 @@ impl Plugin for RulesPlugin {
             .init_resource::<ScrollSpeed>()
             .init_resource::<ScrollPosition>()
             .init_resource::<CourseSolids>()
+            .init_resource::<Hearts>()
+            .init_resource::<LatestCheckpoint>()
+            .init_resource::<RespawnGrace>()
             .add_systems(PreUpdate, rebuild_course)
             .add_systems(
                 Update,
-                (adjust_scroll_speed, advance_scroll, buffer_jump_input, move_dog)
+                (
+                    adjust_scroll_speed,
+                    advance_scroll,
+                    buffer_jump_input,
+                    move_dog,
+                    spawn_due_snowballs,
+                    move_snowballs,
+                    track_checkpoints,
+                    check_hazards,
+                )
                     .chain()
                     .run_if(in_state(GameState::Playing)),
             );

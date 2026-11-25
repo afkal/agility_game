@@ -1,4 +1,5 @@
 mod course;
+mod hazards;
 mod physics;
 mod player;
 mod rules;

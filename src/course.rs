@@ -3,6 +3,7 @@
 
 use bevy::prelude::*;
 
+use crate::hazards::reset_hazards;
 use crate::physics::{Aabb, Ramp, Solid};
 use crate::player::{CourseSolids, Dog, HOME_FROM_LEFT_EDGE};
 use crate::rules::{GameState, ScrollPosition, ScrollSpeed, WINDOW_WIDTH};
@@ -428,6 +429,7 @@ pub fn rebuild_course(
         commands.entity(entity).despawn();
     }
     spawn_course(&mut commands, &layout);
+    reset_hazards(&mut commands);
     commands.insert_resource(ScrollSpeed::default());
     commands.insert_resource(ScrollPosition(
         layout.start_x - HOME_FROM_LEFT_EDGE + WINDOW_WIDTH / 2.0,
