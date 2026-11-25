@@ -79,6 +79,7 @@ impl Body {
         Aabb::from_center(self.center, self.half)
     }
 
+    #[cfg(test)]
     pub fn bottom(&self) -> f32 {
         self.center.y - self.half.y
     }
@@ -112,8 +113,11 @@ pub fn step(body: &mut Body, solids: &[Solid], gravity: f32, dt: f32) -> StepOut
                 continue;
             }
             let low_edge = was_grounded && b.max.y - current.min.y <= STEP_UP;
-            let entering = (dx > 0.0 && current.max.x <= b.min.x + EPSILON && new_x + body.half.x > b.min.x)
-                || (dx < 0.0 && current.min.x >= b.max.x - EPSILON && new_x - body.half.x < b.max.x);
+            let entering =
+                (dx > 0.0 && current.max.x <= b.min.x + EPSILON && new_x + body.half.x > b.min.x)
+                    || (dx < 0.0
+                        && current.min.x >= b.max.x - EPSILON
+                        && new_x - body.half.x < b.max.x);
             if low_edge && entering {
                 step_up_to = Some(step_up_to.map_or(b.max.y, |h: f32| h.max(b.max.y)));
                 continue;
@@ -151,7 +155,9 @@ pub fn step(body: &mut Body, solids: &[Solid], gravity: f32, dt: f32) -> StepOut
                 if !horizontal_overlap {
                     continue;
                 }
-                if body.velocity.y <= 0.0 && current.min.y >= b.max.y - EPSILON && new_bottom <= b.max.y
+                if body.velocity.y <= 0.0
+                    && current.min.y >= b.max.y - EPSILON
+                    && new_bottom <= b.max.y
                 {
                     landed_on = Some(landed_on.map_or(b.max.y, |h: f32| h.max(b.max.y)));
                 } else if body.velocity.y > 0.0
@@ -260,7 +266,11 @@ mod tests {
         body.velocity = Vec2::new(200.0, 750.0);
         simulate(&mut body, &[ground(), table], 1.0);
         assert!(body.grounded);
-        assert!((body.bottom() + 210.0).abs() < 0.01, "bottom {}", body.bottom());
+        assert!(
+            (body.bottom() + 210.0).abs() < 0.01,
+            "bottom {}",
+            body.bottom()
+        );
     }
 
     #[test]

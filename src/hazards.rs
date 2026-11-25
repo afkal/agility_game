@@ -3,12 +3,12 @@
 use bevy::prelude::*;
 
 use crate::course::{
-    CheckpointMarker, CourseEntity, CourseLayout, RestartRequested, SnowballSpawn, FALL_LIMIT,
-    GROUND_TOP,
+    CheckpointMarker, CourseEntity, CourseLayout, FALL_LIMIT, GROUND_TOP, RestartRequested,
+    SnowballSpawn,
 };
 use crate::physics::Aabb;
-use crate::player::{home_x, Dog, HOME_FROM_LEFT_EDGE};
-use crate::rules::{frame_delta, ScrollPosition, WINDOW_WIDTH};
+use crate::player::{Dog, HOME_FROM_LEFT_EDGE, home_x};
+use crate::rules::{ScrollPosition, WINDOW_WIDTH, frame_delta};
 
 pub const STARTING_HEARTS: u8 = 3;
 /// After a respawn the dog cannot lose a heart for this long.
@@ -86,7 +86,8 @@ pub fn move_snowballs(
         transform.translation.x += ball.velocity.x * dt;
         let x = transform.translation.x;
         let resting_height = GROUND_TOP + ball.radius;
-        let on_ground = layout.surface_at(x).is_some() && transform.translation.y >= resting_height - 0.01;
+        let on_ground =
+            layout.surface_at(x).is_some() && transform.translation.y >= resting_height - 0.01;
         if on_ground {
             ball.velocity.y = 0.0;
             transform.translation.y = resting_height;
@@ -237,7 +238,11 @@ mod tests {
         let mut app = rules_app_with(gap_course());
         let d = run_until_heart_lost(&mut app, 6.0);
         assert_eq!(hearts(&app), 2);
-        assert!((d.body.center.x - 300.0).abs() < 1.0, "respawned at {}", d.body.center.x);
+        assert!(
+            (d.body.center.x - 300.0).abs() < 1.0,
+            "respawned at {}",
+            d.body.center.x
+        );
         assert!(d.body.grounded);
     }
 

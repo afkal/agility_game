@@ -3,7 +3,7 @@
 use bevy::prelude::*;
 
 use crate::physics::{self, Body, Solid};
-use crate::rules::{frame_delta, ScrollPosition, ScrollSpeed};
+use crate::rules::{ScrollPosition, ScrollSpeed, frame_delta};
 
 pub const GRAVITY: f32 = 1800.0;
 pub const JUMP_VELOCITY: f32 = 800.0;
@@ -140,7 +140,10 @@ mod tests {
         let home = home_x(app.world().resource::<ScrollPosition>());
         let dog = app
             .world_mut()
-            .spawn((Dog::standing_at(Vec2::new(home, GROUND_TOP)), Transform::default()))
+            .spawn((
+                Dog::standing_at(Vec2::new(home, GROUND_TOP)),
+                Transform::default(),
+            ))
             .id();
         (app, dog)
     }
@@ -198,14 +201,23 @@ mod tests {
     #[test]
     fn dog_catches_up_faster_than_scroll_and_stops_at_home() {
         let (mut app, entity) = app_with(vec![ground(-5_000.0, 50_000.0)]);
-        app.world_mut().get_mut::<Dog>(entity).unwrap().body.center.x -= 300.0;
+        app.world_mut()
+            .get_mut::<Dog>(entity)
+            .unwrap()
+            .body
+            .center
+            .x -= 300.0;
         let start_gap = {
             let home = home_x(app.world().resource::<ScrollPosition>());
             home - dog(&app, entity).body.center.x
         };
         run_for(&mut app, 0.25);
-        let gap_after = home_x(app.world().resource::<ScrollPosition>()) - dog(&app, entity).body.center.x;
-        assert!(gap_after < start_gap - 20.0, "gap {start_gap} -> {gap_after}");
+        let gap_after =
+            home_x(app.world().resource::<ScrollPosition>()) - dog(&app, entity).body.center.x;
+        assert!(
+            gap_after < start_gap - 20.0,
+            "gap {start_gap} -> {gap_after}"
+        );
         run_for(&mut app, 4.0);
         let d = dog(&app, entity);
         let home = home_x(app.world().resource::<ScrollPosition>());
@@ -219,20 +231,38 @@ mod tests {
         let home = home_x(app.world().resource::<ScrollPosition>());
         // Ground ends just behind the dog's back edge, so it steps off at once.
         let edge = home + DOG_HALF_SIZE.x;
-        app.insert_resource(CourseSolids(vec![ground(-5_000.0, edge - 2.0 * DOG_HALF_SIZE.x + 3.0)]));
+        app.insert_resource(CourseSolids(vec![ground(
+            -5_000.0,
+            edge - 2.0 * DOG_HALF_SIZE.x + 3.0,
+        )]));
         step(&mut app, 1.0 / 60.0);
         step(&mut app, 1.0 / 60.0);
-        assert!(!dog(&app, entity).body.grounded, "dog should have left the ground");
+        assert!(
+            !dog(&app, entity).body.grounded,
+            "dog should have left the ground"
+        );
         tap_space(&mut app);
-        assert!(dog(&app, entity).body.velocity.y > 0.0, "coyote jump did not fire");
+        assert!(
+            dog(&app, entity).body.velocity.y > 0.0,
+            "coyote jump did not fire"
+        );
     }
 
     #[test]
     fn jump_pressed_just_before_landing_fires_on_landing() {
         let (mut app, entity) = app_with(vec![ground(-5_000.0, 50_000.0)]);
         // About 0.09 s of falling left, inside the jump buffer window.
-        app.world_mut().get_mut::<Dog>(entity).unwrap().body.center.y += 8.0;
-        app.world_mut().get_mut::<Dog>(entity).unwrap().body.grounded = false;
+        app.world_mut()
+            .get_mut::<Dog>(entity)
+            .unwrap()
+            .body
+            .center
+            .y += 8.0;
+        app.world_mut()
+            .get_mut::<Dog>(entity)
+            .unwrap()
+            .body
+            .grounded = false;
         app.world_mut().get_mut::<Dog>(entity).unwrap().coyote = 0.0;
         tap_space(&mut app);
         run_for(&mut app, 0.15);

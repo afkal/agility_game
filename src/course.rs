@@ -502,8 +502,8 @@ fn spawn_part(commands: &mut Commands, part: CoursePart) {
 mod tests {
     use super::*;
     use crate::player::{DOG_HALF_SIZE, GRAVITY, JUMP_VELOCITY};
-    use crate::rules::{MIN_SCROLL_SPEED, NORMAL_SCROLL_SPEED};
     use crate::rules::test_support::*;
+    use crate::rules::{MIN_SCROLL_SPEED, NORMAL_SCROLL_SPEED};
 
     /// Extra room kept on every jump so the course is comfortable, not exact.
     const MARGIN: f32 = 20.0;
@@ -534,7 +534,10 @@ mod tests {
         assert!(!gaps.is_empty());
         for (a, b) in gaps {
             let width = b - a;
-            assert!(width > dog_width, "gap at {a} is too narrow to fall into: {width}");
+            assert!(
+                width > dog_width,
+                "gap at {a} is too narrow to fall into: {width}"
+            );
             assert!(
                 width <= reach + dog_width - MARGIN,
                 "gap at {a} is too wide to jump at the slowest pace: {width}"
@@ -559,7 +562,10 @@ mod tests {
             steps.push(table.top - before);
         }
         for step in steps {
-            assert!(step <= jump_height() - MARGIN * 2.0, "step of {step} is too high");
+            assert!(
+                step <= jump_height() - MARGIN * 2.0,
+                "step of {step} is too high"
+            );
         }
     }
 
@@ -569,10 +575,17 @@ mod tests {
         assert!(!layout.checkpoints.is_empty());
         for &x in &layout.checkpoints {
             for dx in [-DOG_HALF_SIZE.x, 0.0, DOG_HALF_SIZE.x] {
-                assert_eq!(layout.surface_at(x + dx), Some(GROUND_TOP), "checkpoint at {x}");
+                assert_eq!(
+                    layout.surface_at(x + dx),
+                    Some(GROUND_TOP),
+                    "checkpoint at {x}"
+                );
             }
             for &h in &layout.hurdles {
-                assert!((h - x).abs() > 150.0, "checkpoint at {x} is next to a hurdle");
+                assert!(
+                    (h - x).abs() > 150.0,
+                    "checkpoint at {x} is next to a hurdle"
+                );
             }
         }
     }
@@ -586,7 +599,10 @@ mod tests {
             let cookie_box = Aabb::from_center(c, Vec2::splat(COOKIE_RADIUS));
             for solid in &solids {
                 if let Solid::Box(b) = solid {
-                    assert!(!cookie_box.overlaps(b), "cookie at {c} is inside an obstacle");
+                    assert!(
+                        !cookie_box.overlaps(b),
+                        "cookie at {c} is inside an obstacle"
+                    );
                 }
             }
             let below = layout.surface_at(c.x).unwrap_or(GROUND_TOP);

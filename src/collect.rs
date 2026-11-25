@@ -32,7 +32,8 @@ pub fn collect_cookies(
     let Ok(dog) = dogs.single() else { return };
     let dog_box = dog.body.aabb();
     for (entity, cookie, transform) in &cookies {
-        let cookie_box = Aabb::from_center(transform.translation.truncate(), Vec2::splat(cookie.radius));
+        let cookie_box =
+            Aabb::from_center(transform.translation.truncate(), Vec2::splat(cookie.radius));
         if cookie_box.overlaps(&dog_box) {
             commands.entity(entity).despawn();
             count.0 += 1;
@@ -72,10 +73,10 @@ pub fn play_again(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::course::{CourseLayout, COOKIE_RADIUS, GROUND_TOP};
+    use crate::course::{COOKIE_RADIUS, CourseLayout, GROUND_TOP};
     use crate::hazards::Hearts;
     use crate::player::DOG_HALF_SIZE;
-    use crate::rules::{test_support::*, ScrollPosition};
+    use crate::rules::{ScrollPosition, test_support::*};
 
     fn count(app: &App) -> u32 {
         app.world().resource::<GingerbreadCount>().0
@@ -90,7 +91,13 @@ mod tests {
     }
 
     fn dog_x(app: &mut App) -> f32 {
-        app.world_mut().query::<&Dog>().single(app.world()).unwrap().body.center.x
+        app.world_mut()
+            .query::<&Dog>()
+            .single(app.world())
+            .unwrap()
+            .body
+            .center
+            .x
     }
 
     /// Run until the dog crosses the finish line.
@@ -124,7 +131,10 @@ mod tests {
     #[test]
     fn cookie_high_above_is_not_collected_without_a_jump() {
         let mut app = rules_app_with(CourseLayout {
-            cookies: vec![Vec2::new(300.0, GROUND_TOP + 2.0 * DOG_HALF_SIZE.y + COOKIE_RADIUS + 10.0)],
+            cookies: vec![Vec2::new(
+                300.0,
+                GROUND_TOP + 2.0 * DOG_HALF_SIZE.y + COOKIE_RADIUS + 10.0,
+            )],
             ..CourseLayout::flat(50_000.0)
         });
         run_for(&mut app, 3.0);
@@ -133,7 +143,9 @@ mod tests {
 
     #[test]
     fn crossing_the_finish_shows_the_count_and_stops_the_run() {
-        let cookies = (0..23).map(|i| at_dog_height(200.0 + i as f32 * 40.0)).collect();
+        let cookies = (0..23)
+            .map(|i| at_dog_height(200.0 + i as f32 * 40.0))
+            .collect();
         let mut app = rules_app_with(CourseLayout {
             cookies,
             finish_x: 1_500.0,
@@ -193,7 +205,11 @@ mod tests {
         let mut app = rules_app_with(CourseLayout {
             ground: vec![(-1_000.0, 600.0), (720.0, 50_000.0)],
             checkpoints: vec![100.0, 300.0],
-            cookies: vec![at_dog_height(150.0), at_dog_height(250.0), at_dog_height(400.0)],
+            cookies: vec![
+                at_dog_height(150.0),
+                at_dog_height(250.0),
+                at_dog_height(400.0),
+            ],
             start_x: 0.0,
             finish_x: 40_000.0,
             ..default()

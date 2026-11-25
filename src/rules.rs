@@ -6,14 +6,14 @@
 use bevy::prelude::*;
 
 use crate::collect::{
-    check_finish, collect_cookies, play_again, CelebrationTime, GingerbreadCount,
+    CelebrationTime, GingerbreadCount, check_finish, collect_cookies, play_again,
 };
-use crate::course::{rebuild_course, CourseLayout, RestartRequested};
+use crate::course::{CourseLayout, RestartRequested, rebuild_course};
 use crate::hazards::{
-    check_hazards, move_snowballs, spawn_due_snowballs, track_checkpoints, Hearts, LatestCheckpoint,
-    RespawnGrace,
+    Hearts, LatestCheckpoint, RespawnGrace, check_hazards, move_snowballs, spawn_due_snowballs,
+    track_checkpoints,
 };
-use crate::player::{buffer_jump_input, move_dog, CourseSolids};
+use crate::player::{CourseSolids, buffer_jump_input, move_dog};
 
 pub const WINDOW_WIDTH: f32 = 1280.0;
 pub const WINDOW_HEIGHT: f32 = 800.0;
@@ -174,7 +174,9 @@ pub mod test_support {
     }
 
     pub fn press(app: &mut App, key: KeyCode) {
-        app.world_mut().resource_mut::<ButtonInput<KeyCode>>().press(key);
+        app.world_mut()
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .press(key);
     }
 
     pub fn release_all(app: &mut App) {

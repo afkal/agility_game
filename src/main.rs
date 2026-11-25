@@ -6,6 +6,7 @@ mod hud;
 mod physics;
 mod player;
 mod rules;
+mod snow;
 mod visuals;
 
 use bevy::{prelude::*, window::WindowResolution};

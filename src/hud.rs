@@ -2,8 +2,8 @@
 
 use bevy::prelude::*;
 
-use crate::art::{self, HeartPiece, Painter, HEART_EMPTY, HEART_RED};
-use crate::collect::{CelebrationTime, GingerbreadCount, CELEBRATION_MIN_TIME};
+use crate::art::{self, HEART_EMPTY, HEART_RED, HeartPiece, Painter};
+use crate::collect::{CELEBRATION_MIN_TIME, CelebrationTime, GingerbreadCount};
 use crate::hazards::{Hearts, STARTING_HEARTS};
 use crate::rules::{GameState, WINDOW_HEIGHT, WINDOW_WIDTH};
 use crate::visuals::MainCamera;
@@ -77,8 +77,11 @@ fn spawn_hud(
             ))
             .with_children(|heart| art::heart(heart, &mut painter, 44.0, full.clone()));
         }
-        hud.spawn((Transform::from_xyz(right - 150.0, top, HUD_Z), Visibility::default()))
-            .with_children(|icon| art::gingerbread_man(icon, &mut painter, 44.0));
+        hud.spawn((
+            Transform::from_xyz(right - 150.0, top, HUD_Z),
+            Visibility::default(),
+        ))
+        .with_children(|icon| art::gingerbread_man(icon, &mut painter, 44.0));
         hud.spawn((
             CountText,
             Text2d::new("0"),
@@ -100,7 +103,9 @@ fn update_hearts(
     icons: Query<(&HeartIcon, &Children)>,
     mut pieces: Query<&mut MeshMaterial2d<ColorMaterial>, With<HeartPiece>>,
 ) {
-    let Some(heart_materials) = heart_materials else { return };
+    let Some(heart_materials) = heart_materials else {
+        return;
+    };
     if !hearts.is_changed() && !heart_materials.is_added() {
         return;
     }
@@ -146,40 +151,56 @@ fn spawn_finish_screen(
                 flex_direction: FlexDirection::Column,
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
-                row_gap: Val::Px(18.0),
                 ..default()
             },
         ))
         .with_children(|screen| {
-            screen.spawn((
-                Text::new("Well done!"),
-                TextFont {
-                    font: font.clone().into(),
-                    font_size: FontSize::Px(72.0),
-                    ..default()
-                },
-                TextColor(Color::WHITE),
-            ));
-            screen.spawn((
-                Text::new(format!("The dog brought {} gingerbread {cookies}!", count.0)),
-                TextFont {
-                    font: font.clone().into(),
-                    font_size: FontSize::Px(40.0),
-                    ..default()
-                },
-                TextColor(Color::WHITE),
-            ));
-            screen.spawn((
-                PlayAgainHint,
-                Text::new("Press Space to play again"),
-                TextFont {
-                    font: font.into(),
-                    font_size: FontSize::Px(28.0),
-                    ..default()
-                },
-                TextColor(Color::WHITE),
-                Visibility::Hidden,
-            ));
+            screen
+                .spawn((
+                    Node {
+                        flex_direction: FlexDirection::Column,
+                        align_items: AlignItems::Center,
+                        row_gap: Val::Px(18.0),
+                        padding: UiRect::axes(Val::Px(48.0), Val::Px(28.0)),
+                        border_radius: BorderRadius::all(Val::Px(24.0)),
+                        ..default()
+                    },
+                    BackgroundColor(Color::srgba(0.05, 0.16, 0.36, 0.6)),
+                ))
+                .with_children(|screen| {
+                    screen.spawn((
+                        Text::new("Well done!"),
+                        TextFont {
+                            font: font.clone().into(),
+                            font_size: FontSize::Px(72.0),
+                            ..default()
+                        },
+                        TextColor(Color::WHITE),
+                    ));
+                    screen.spawn((
+                        Text::new(format!(
+                            "The dog brought {} gingerbread {cookies}!",
+                            count.0
+                        )),
+                        TextFont {
+                            font: font.clone().into(),
+                            font_size: FontSize::Px(40.0),
+                            ..default()
+                        },
+                        TextColor(Color::WHITE),
+                    ));
+                    screen.spawn((
+                        PlayAgainHint,
+                        Text::new("Press Space to play again"),
+                        TextFont {
+                            font: font.into(),
+                            font_size: FontSize::Px(28.0),
+                            ..default()
+                        },
+                        TextColor(Color::WHITE),
+                        Visibility::Hidden,
+                    ));
+                });
         });
 
     // Confetti in Christmas colours, falling across the view.
@@ -196,10 +217,17 @@ fn spawn_finish_screen(
             parent.spawn((
                 FinishScreen,
                 Confetti {
-                    velocity: Vec2::new(rand::random_range(-40.0..40.0), rand::random_range(-260.0..-140.0)),
+                    velocity: Vec2::new(
+                        rand::random_range(-40.0..40.0),
+                        rand::random_range(-260.0..-140.0),
+                    ),
                     spin: rand::random_range(-6.0..6.0),
                 },
-                painter.rect(Vec2::new(10.0, 6.0), colors[i % colors.len()], Vec3::new(x, y, HUD_Z - 1.0)),
+                painter.rect(
+                    Vec2::new(10.0, 6.0),
+                    colors[i % colors.len()],
+                    Vec3::new(x, y, HUD_Z - 1.0),
+                ),
             ));
         }
     });

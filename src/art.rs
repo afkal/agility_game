@@ -27,7 +27,13 @@ impl Painter<'_> {
     }
 
     /// A shape at `pos` (z included) with the given rotation in radians.
-    pub fn shape(&mut self, mesh: impl Into<Mesh>, color: Color, pos: Vec3, angle: f32) -> impl Bundle {
+    pub fn shape(
+        &mut self,
+        mesh: impl Into<Mesh>,
+        color: Color,
+        pos: Vec3,
+        angle: f32,
+    ) -> impl Bundle {
         (
             Mesh2d(self.meshes.add(mesh.into())),
             MeshMaterial2d(self.materials.add(color)),
@@ -49,7 +55,12 @@ impl Painter<'_> {
 }
 
 /// A heart of the given size, as child shapes of `parent`.
-pub fn heart(parent: &mut ChildSpawnerCommands, painter: &mut Painter, size: f32, material: Handle<ColorMaterial>) {
+pub fn heart(
+    parent: &mut ChildSpawnerCommands,
+    painter: &mut Painter,
+    size: f32,
+    material: Handle<ColorMaterial>,
+) {
     let r = size * 0.3;
     let lobe = meshes_circle(painter, r);
     let point = painter.meshes.add(Rectangle::new(r * 1.55, r * 1.55));
@@ -64,7 +75,8 @@ pub fn heart(parent: &mut ChildSpawnerCommands, painter: &mut Painter, size: f32
     parent.spawn((
         Mesh2d(point),
         MeshMaterial2d(material),
-        Transform::from_xyz(0.0, -r * 0.45, 0.0).with_rotation(Quat::from_rotation_z(std::f32::consts::FRAC_PI_4)),
+        Transform::from_xyz(0.0, -r * 0.45, 0.0)
+            .with_rotation(Quat::from_rotation_z(std::f32::consts::FRAC_PI_4)),
         HeartPiece,
     ));
 }
@@ -81,7 +93,12 @@ pub struct HeartPiece;
 pub fn gingerbread_man(parent: &mut ChildSpawnerCommands, painter: &mut Painter, height: f32) {
     let s = height / 40.0;
     parent.spawn(painter.circle(7.0 * s, GINGERBREAD, Vec3::new(0.0, 12.0 * s, 0.0)));
-    parent.spawn(painter.shape(Capsule2d::new(7.5 * s, 10.0 * s), GINGERBREAD, Vec3::new(0.0, -2.0 * s, 0.0), 0.0));
+    parent.spawn(painter.shape(
+        Capsule2d::new(7.5 * s, 10.0 * s),
+        GINGERBREAD,
+        Vec3::new(0.0, -2.0 * s, 0.0),
+        0.0,
+    ));
     parent.spawn(painter.shape(
         Capsule2d::new(3.0 * s, 20.0 * s),
         GINGERBREAD,
