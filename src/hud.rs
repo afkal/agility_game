@@ -53,15 +53,10 @@ struct Confetti {
 fn spawn_hud(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut painter: Painter,
     camera: Query<Entity, With<MainCamera>>,
 ) {
     let Ok(camera) = camera.single() else { return };
-    let mut painter = Painter {
-        meshes: &mut meshes,
-        materials: &mut materials,
-    };
     let full = painter.material(HEART_RED);
     let empty = painter.material(HEART_EMPTY);
     let top = WINDOW_HEIGHT / 2.0 - 40.0;
@@ -136,8 +131,7 @@ fn spawn_finish_screen(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     count: Res<GingerbreadCount>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut painter: Painter,
     camera: Query<Entity, With<MainCamera>>,
 ) {
     let font = asset_server.load(FONT);
@@ -205,10 +199,6 @@ fn spawn_finish_screen(
 
     // Confetti in Christmas colours, falling across the view.
     let Ok(camera) = camera.single() else { return };
-    let mut painter = Painter {
-        meshes: &mut meshes,
-        materials: &mut materials,
-    };
     let colors = [art::CANDY_RED, art::GOLD, art::PINE_GREEN, art::SNOW_WHITE];
     commands.entity(camera).with_children(|parent| {
         for i in 0..120 {
@@ -239,7 +229,7 @@ fn show_play_again_hint(
 ) {
     if celebration.0 >= CELEBRATION_MIN_TIME {
         for mut visibility in &mut hints {
-            *visibility = Visibility::Visible;
+            visibility.set_if_neq(Visibility::Visible);
         }
     }
 }

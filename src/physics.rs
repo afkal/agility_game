@@ -113,22 +113,18 @@ pub fn step(body: &mut Body, solids: &[Solid], gravity: f32, dt: f32) -> StepOut
                 continue;
             }
             let low_edge = was_grounded && b.max.y - current.min.y <= STEP_UP;
-            let entering =
-                (dx > 0.0 && current.max.x <= b.min.x + EPSILON && new_x + body.half.x > b.min.x)
-                    || (dx < 0.0
-                        && current.min.x >= b.max.x - EPSILON
-                        && new_x - body.half.x < b.max.x);
-            if low_edge && entering {
+            let entering_from_left =
+                dx > 0.0 && current.max.x <= b.min.x + EPSILON && new_x + body.half.x > b.min.x;
+            let entering_from_right =
+                dx < 0.0 && current.min.x >= b.max.x - EPSILON && new_x - body.half.x < b.max.x;
+            if low_edge && (entering_from_left || entering_from_right) {
                 step_up_to = Some(step_up_to.map_or(b.max.y, |h: f32| h.max(b.max.y)));
                 continue;
             }
-            if dx > 0.0 && current.max.x <= b.min.x + EPSILON && new_x + body.half.x > b.min.x {
+            if entering_from_left {
                 new_x = new_x.min(b.min.x - body.half.x);
                 outcome.blocked = true;
-            } else if dx < 0.0
-                && current.min.x >= b.max.x - EPSILON
-                && new_x - body.half.x < b.max.x
-            {
+            } else if entering_from_right {
                 new_x = new_x.max(b.max.x + body.half.x);
                 outcome.blocked = true;
             }

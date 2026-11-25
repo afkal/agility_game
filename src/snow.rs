@@ -27,15 +27,10 @@ struct Flake {
 
 fn spawn_snow(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut painter: Painter,
     camera: Query<Entity, With<MainCamera>>,
 ) {
     let Ok(camera) = camera.single() else { return };
-    let mut painter = Painter {
-        meshes: &mut meshes,
-        materials: &mut materials,
-    };
     commands.entity(camera).with_children(|parent| {
         for _ in 0..FLAKE_COUNT {
             let size = rand::random_range(1.5..4.5);

@@ -1,7 +1,7 @@
 //! Shape-drawn art. Every picture in the level except the dog is built here
 //! from simple meshes, so it can later be swapped for an image in one place.
 
-use bevy::prelude::*;
+use bevy::{ecs::system::SystemParam, platform::collections::HashMap, prelude::*};
 
 pub const SNOW_WHITE: Color = Color::srgb(0.97, 0.98, 1.0);
 pub const SNOW_SHADE: Color = Color::srgb(0.80, 0.87, 0.96);
@@ -14,29 +14,54 @@ pub const ICING: Color = Color::srgb(1.0, 0.98, 0.94);
 pub const HEART_RED: Color = Color::srgb(0.92, 0.18, 0.30);
 pub const HEART_EMPTY: Color = Color::srgba(1.0, 1.0, 1.0, 0.45);
 
-/// Makes mesh-and-colour shapes. Borrowed from the asset stores for the
-/// duration of one system.
-pub struct Painter<'a> {
-    pub meshes: &'a mut Assets<Mesh>,
-    pub materials: &'a mut Assets<ColorMaterial>,
+/// Meshes and materials already made, so identical shapes and colours share one
+/// asset each instead of creating a new one per entity.
+#[derive(Resource, Default)]
+pub struct ArtCache {
+    meshes: HashMap<String, Handle<Mesh>>,
+    materials: HashMap<[u32; 4], Handle<ColorMaterial>>,
+}
+
+/// Makes mesh-and-colour shapes, reusing cached assets.
+#[derive(SystemParam)]
+pub struct Painter<'w> {
+    meshes: ResMut<'w, Assets<Mesh>>,
+    materials: ResMut<'w, Assets<ColorMaterial>>,
+    cache: ResMut<'w, ArtCache>,
 }
 
 impl Painter<'_> {
     pub fn material(&mut self, color: Color) -> Handle<ColorMaterial> {
-        self.materials.add(color)
+        let key = color.to_linear().to_f32_array().map(f32::to_bits);
+        if let Some(handle) = self.cache.materials.get(&key) {
+            return handle.clone();
+        }
+        let handle = self.materials.add(color);
+        self.cache.materials.insert(key, handle.clone());
+        handle
+    }
+
+    pub fn mesh<S: Into<Mesh> + std::fmt::Debug>(&mut self, shape: S) -> Handle<Mesh> {
+        let key = format!("{shape:?}");
+        if let Some(handle) = self.cache.meshes.get(&key) {
+            return handle.clone();
+        }
+        let handle = self.meshes.add(shape.into());
+        self.cache.meshes.insert(key, handle.clone());
+        handle
     }
 
     /// A shape at `pos` (z included) with the given rotation in radians.
-    pub fn shape(
+    pub fn shape<S: Into<Mesh> + std::fmt::Debug>(
         &mut self,
-        mesh: impl Into<Mesh>,
+        shape: S,
         color: Color,
         pos: Vec3,
         angle: f32,
     ) -> impl Bundle {
         (
-            Mesh2d(self.meshes.add(mesh.into())),
-            MeshMaterial2d(self.materials.add(color)),
+            Mesh2d(self.mesh(shape)),
+            MeshMaterial2d(self.material(color)),
             Transform::from_translation(pos).with_rotation(Quat::from_rotation_z(angle)),
         )
     }
@@ -54,6 +79,15 @@ impl Painter<'_> {
     }
 }
 
+/// Alternating red and white, for candy-cane stripes.
+pub fn candy_stripe(index: usize) -> Color {
+    if index.is_multiple_of(2) {
+        CANDY_RED
+    } else {
+        SNOW_WHITE
+    }
+}
+
 /// A heart of the given size, as child shapes of `parent`.
 pub fn heart(
     parent: &mut ChildSpawnerCommands,
@@ -62,8 +96,8 @@ pub fn heart(
     material: Handle<ColorMaterial>,
 ) {
     let r = size * 0.3;
-    let lobe = meshes_circle(painter, r);
-    let point = painter.meshes.add(Rectangle::new(r * 1.55, r * 1.55));
+    let lobe = painter.mesh(Circle::new(r));
+    let point = painter.mesh(Rectangle::new(r * 1.55, r * 1.55));
     for x in [-r * 0.72, r * 0.72] {
         parent.spawn((
             Mesh2d(lobe.clone()),
@@ -79,10 +113,6 @@ pub fn heart(
             .with_rotation(Quat::from_rotation_z(std::f32::consts::FRAC_PI_4)),
         HeartPiece,
     ));
-}
-
-fn meshes_circle(painter: &mut Painter, radius: f32) -> Handle<Mesh> {
-    painter.meshes.add(Circle::new(radius))
 }
 
 /// One shape of a heart; the HUD recolours these when a heart is lost.

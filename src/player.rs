@@ -3,7 +3,7 @@
 use bevy::prelude::*;
 
 use crate::physics::{self, Body, Solid};
-use crate::rules::{ScrollPosition, ScrollSpeed, frame_delta};
+use crate::rules::{ScrollPosition, ScrollSpeed, WINDOW_WIDTH, frame_delta};
 
 pub const GRAVITY: f32 = 1800.0;
 pub const JUMP_VELOCITY: f32 = 800.0;
@@ -53,10 +53,21 @@ impl Dog {
             blocked: false,
         }
     }
+
+    /// Move the entity's transform to where the dog's body is.
+    pub fn sync_transform(&self, transform: &mut Transform) {
+        transform.translation.x = self.body.center.x;
+        transform.translation.y = self.body.center.y;
+    }
 }
 
 pub fn home_x(scroll: &ScrollPosition) -> f32 {
     scroll.left_edge() + HOME_FROM_LEFT_EDGE
+}
+
+/// The scroll position that puts the dog's home at world `x`.
+pub fn scroll_with_home_at(x: f32) -> ScrollPosition {
+    ScrollPosition(x - HOME_FROM_LEFT_EDGE + WINDOW_WIDTH / 2.0)
 }
 
 pub fn buffer_jump_input(keyboard_input: Res<ButtonInput<KeyCode>>, mut dogs: Query<&mut Dog>) {
@@ -105,8 +116,7 @@ pub fn move_dog(
         }
         dog.jump_buffer = (dog.jump_buffer - dt).max(0.0);
 
-        transform.translation.x = dog.body.center.x;
-        transform.translation.y = dog.body.center.y;
+        dog.sync_transform(&mut transform);
     }
 }
 

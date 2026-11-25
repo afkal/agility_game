@@ -6,8 +6,8 @@ use bevy::prelude::*;
 use crate::collect::reset_collecting;
 use crate::hazards::reset_hazards;
 use crate::physics::{Aabb, Ramp, Solid};
-use crate::player::{CourseSolids, Dog, HOME_FROM_LEFT_EDGE};
-use crate::rules::{GameState, ScrollPosition, ScrollSpeed, WINDOW_WIDTH};
+use crate::player::{CourseSolids, Dog, scroll_with_home_at};
+use crate::rules::{GameState, ScrollSpeed, WINDOW_WIDTH};
 
 pub const GROUND_TOP: f32 = -300.0;
 pub const GROUND_BOTTOM: f32 = -400.0;
@@ -74,10 +74,7 @@ impl CourseLayout {
     pub fn solids(&self) -> Vec<Solid> {
         let mut solids = Vec::new();
         for &(x0, x1) in &self.ground {
-            solids.push(Solid::Box(Aabb {
-                min: Vec2::new(x0, GROUND_BOTTOM),
-                max: Vec2::new(x1, GROUND_TOP),
-            }));
+            solids.push(Solid::Box(ground_box(x0, x1)));
         }
         for &x in &self.hurdles {
             solids.push(Solid::Box(hurdle_box(x)));
@@ -215,6 +212,13 @@ impl CourseLayout {
             finish_x: length - 200.0,
             ..default()
         }
+    }
+}
+
+pub fn ground_box(x0: f32, x1: f32) -> Aabb {
+    Aabb {
+        min: Vec2::new(x0, GROUND_BOTTOM),
+        max: Vec2::new(x1, GROUND_TOP),
     }
 }
 
@@ -433,9 +437,7 @@ pub fn rebuild_course(
     reset_hazards(&mut commands);
     reset_collecting(&mut commands);
     commands.insert_resource(ScrollSpeed::default());
-    commands.insert_resource(ScrollPosition(
-        layout.start_x - HOME_FROM_LEFT_EDGE + WINDOW_WIDTH / 2.0,
-    ));
+    commands.insert_resource(scroll_with_home_at(layout.start_x));
     next_state.set(GameState::Playing);
 }
 
@@ -443,13 +445,7 @@ fn spawn_course(commands: &mut Commands, layout: &CourseLayout) {
     commands.insert_resource(CourseSolids(layout.solids()));
 
     for &(x0, x1) in &layout.ground {
-        spawn_part(
-            commands,
-            CoursePart::Ground(Aabb {
-                min: Vec2::new(x0, GROUND_BOTTOM),
-                max: Vec2::new(x1, GROUND_TOP),
-            }),
-        );
+        spawn_part(commands, CoursePart::Ground(ground_box(x0, x1)));
     }
     for &x in &layout.hurdles {
         spawn_part(commands, CoursePart::Hurdle(hurdle_box(x)));

@@ -5,7 +5,7 @@ use std::f32::consts::FRAC_PI_2;
 
 use bevy::prelude::*;
 
-use crate::art::{self, Painter};
+use crate::art::{self, ArtCache, Painter};
 use crate::course::{Cookie, CourseLayout, CoursePart, FinishLine, GROUND_BOTTOM, GROUND_TOP};
 use crate::hazards::Snowball;
 use crate::hud::HudPlugin;
@@ -28,6 +28,7 @@ pub struct VisualsPlugin;
 impl Plugin for VisualsPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((HudPlugin, SnowPlugin))
+            .init_resource::<ArtCache>()
             .insert_resource(ClearColor(SKY_COLOR))
             .add_systems(
                 Startup,
@@ -79,15 +80,10 @@ struct Backdrop {
 
 fn spawn_backdrop(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut painter: Painter,
     camera: Query<Entity, With<MainCamera>>,
 ) {
     let Ok(camera) = camera.single() else { return };
-    let mut painter = Painter {
-        meshes: &mut meshes,
-        materials: &mut materials,
-    };
     let far_hill = Color::srgb(0.84, 0.91, 0.98);
     let near_hill = Color::srgb(0.91, 0.95, 1.0);
     let span = WINDOW_WIDTH * 2.0;
@@ -178,16 +174,7 @@ fn move_backdrop(scroll: Res<ScrollPosition>, mut layers: Query<(&Backdrop, &mut
 }
 
 /// Icy water at the bottom of each gap.
-fn spawn_ponds(
-    mut commands: Commands,
-    layout: Res<CourseLayout>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-) {
-    let mut painter = Painter {
-        meshes: &mut meshes,
-        materials: &mut materials,
-    };
+fn spawn_ponds(mut commands: Commands, layout: Res<CourseLayout>, mut painter: Painter) {
     for (x0, x1) in layout.gaps() {
         let width = x1 - x0;
         let center = (x0 + x1) / 2.0;
@@ -206,14 +193,9 @@ fn spawn_ponds(
 
 fn draw_parts(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut painter: Painter,
     parts: Query<(Entity, &CoursePart), Added<CoursePart>>,
 ) {
-    let mut painter = Painter {
-        meshes: &mut meshes,
-        materials: &mut materials,
-    };
     for (entity, part) in &parts {
         commands
             .entity(entity)
@@ -235,11 +217,7 @@ fn draw_parts(
                     let stripes = 6;
                     let h = size.y / stripes as f32;
                     for i in 0..stripes {
-                        let color = if i % 2 == 0 {
-                            art::CANDY_RED
-                        } else {
-                            art::SNOW_WHITE
-                        };
+                        let color = art::candy_stripe(i);
                         parent.spawn(painter.rect(
                             Vec2::new(size.x, h),
                             color,
@@ -322,14 +300,9 @@ struct CookieBob {
 
 fn draw_cookies(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut painter: Painter,
     cookies: Query<(Entity, &Cookie, &Transform), Added<Cookie>>,
 ) {
-    let mut painter = Painter {
-        meshes: &mut meshes,
-        materials: &mut materials,
-    };
     for (entity, cookie, transform) in &cookies {
         let phase = transform.translation.x * 0.01;
         commands
@@ -359,14 +332,9 @@ fn bob_cookies(time: Res<Time>, mut bobs: Query<(&CookieBob, &mut Transform)>) {
 
 fn draw_snowballs(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut painter: Painter,
     snowballs: Query<(Entity, &Snowball), Added<Snowball>>,
 ) {
-    let mut painter = Painter {
-        meshes: &mut meshes,
-        materials: &mut materials,
-    };
     for (entity, ball) in &snowballs {
         commands
             .entity(entity)
@@ -395,14 +363,9 @@ fn draw_snowballs(
 
 fn draw_finish(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut painter: Painter,
     finish: Query<Entity, Added<FinishLine>>,
 ) {
-    let mut painter = Painter {
-        meshes: &mut meshes,
-        materials: &mut materials,
-    };
     for entity in &finish {
         commands
             .entity(entity)
@@ -411,11 +374,7 @@ fn draw_finish(
                 // Candy-cane gate posts and a gold banner.
                 for dx in [-110.0, 110.0] {
                     for i in 0..10 {
-                        let color = if i % 2 == 0 {
-                            art::CANDY_RED
-                        } else {
-                            art::SNOW_WHITE
-                        };
+                        let color = art::candy_stripe(i);
                         parent.spawn(painter.rect(
                             Vec2::new(14.0, 22.0),
                             color,
@@ -464,14 +423,9 @@ fn draw_finish(
 fn draw_dog(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut painter: Painter,
     dogs: Query<Entity, Added<Dog>>,
 ) {
-    let mut painter = Painter {
-        meshes: &mut meshes,
-        materials: &mut materials,
-    };
     for entity in &dogs {
         commands
             .entity(entity)

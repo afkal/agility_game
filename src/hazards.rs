@@ -7,8 +7,8 @@ use crate::course::{
     SnowballSpawn,
 };
 use crate::physics::Aabb;
-use crate::player::{Dog, HOME_FROM_LEFT_EDGE, home_x};
-use crate::rules::{ScrollPosition, WINDOW_WIDTH, frame_delta};
+use crate::player::{Dog, scroll_with_home_at};
+use crate::rules::{ScrollPosition, frame_delta};
 
 pub const STARTING_HEARTS: u8 = 3;
 /// After a respawn the dog cannot lose a heart for this long.
@@ -162,10 +162,8 @@ pub fn check_hazards(
     let x = latest.0.unwrap_or(layout.start_x);
     let feet = Vec2::new(x, layout.surface_at(x).unwrap_or(GROUND_TOP));
     *dog = Dog::standing_at(feet);
-    transform.translation.x = dog.body.center.x;
-    transform.translation.y = dog.body.center.y;
-    scroll.0 = x - HOME_FROM_LEFT_EDGE + WINDOW_WIDTH / 2.0;
-    debug_assert!((home_x(&scroll) - x).abs() < 0.01);
+    dog.sync_transform(&mut transform);
+    *scroll = scroll_with_home_at(x);
     for (entity, _, _) in &snowballs {
         commands.entity(entity).despawn();
     }
