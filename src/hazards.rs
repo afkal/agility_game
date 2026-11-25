@@ -133,6 +133,7 @@ pub fn check_hazards(
     mut restart: ResMut<RestartRequested>,
     mut dogs: Query<(&mut Dog, &mut Transform), Without<Snowball>>,
     snowballs: Query<(Entity, &Snowball, &Transform)>,
+    spawns: Query<Entity, With<SnowballSpawn>>,
 ) {
     let Ok((mut dog, mut transform)) = dogs.single_mut() else {
         return;
@@ -166,6 +167,18 @@ pub fn check_hazards(
     *scroll = scroll_with_home_at(x);
     for (entity, _, _) in &snowballs {
         commands.entity(entity).despawn();
+    }
+    // Put every snowball still ahead of the view back in place, so retrying a
+    // stretch from the checkpoint meets the same snowballs again.
+    for entity in &spawns {
+        commands.entity(entity).despawn();
+    }
+    for &x in layout
+        .snowballs
+        .iter()
+        .filter(|&&x| x > scroll.right_edge())
+    {
+        commands.spawn((CourseEntity, SnowballSpawn { x }));
     }
     grace.0 = RESPAWN_GRACE;
 }
@@ -292,6 +305,30 @@ mod tests {
         assert_eq!(app.world().resource::<LatestCheckpoint>().0, None);
         let d = dog(&mut app);
         assert!(d.body.center.x < 300.0, "dog at {}", d.body.center.x);
+    }
+
+    #[test]
+    fn snowball_comes_back_when_retrying_from_a_checkpoint() {
+        let mut app = rules_app_with(CourseLayout {
+            checkpoints: vec![100.0],
+            snowballs: vec![1_400.0],
+            ..CourseLayout::flat(50_000.0)
+        });
+        run_until_heart_lost(&mut app, 8.0);
+        assert_eq!(hearts(&app), 2);
+        let snowballs = |app: &mut App| {
+            app.world_mut()
+                .query::<&Snowball>()
+                .iter(app.world())
+                .count()
+        };
+        assert_eq!(snowballs(&mut app), 0);
+        run_for(&mut app, 2.0);
+        assert_eq!(
+            snowballs(&mut app),
+            1,
+            "the snowball should roll in again on the retry"
+        );
     }
 
     #[test]
