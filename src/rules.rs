@@ -5,6 +5,8 @@
 
 use bevy::prelude::*;
 
+use crate::player::{buffer_jump_input, move_dog, CourseSolids};
+
 pub const WINDOW_WIDTH: f32 = 1280.0;
 pub const WINDOW_HEIGHT: f32 = 800.0;
 
@@ -65,9 +67,10 @@ impl Plugin for RulesPlugin {
         app.init_state::<GameState>()
             .init_resource::<ScrollSpeed>()
             .init_resource::<ScrollPosition>()
+            .init_resource::<CourseSolids>()
             .add_systems(
                 Update,
-                (adjust_scroll_speed, advance_scroll)
+                (adjust_scroll_speed, advance_scroll, buffer_jump_input, move_dog)
                     .chain()
                     .run_if(in_state(GameState::Playing)),
             );

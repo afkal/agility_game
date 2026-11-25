@@ -1,3 +1,5 @@
+mod physics;
+mod player;
 mod rules;
 mod visuals;
 
