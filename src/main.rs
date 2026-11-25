@@ -1,5 +1,8 @@
+mod art;
+mod collect;
 mod course;
 mod hazards;
+mod hud;
 mod physics;
 mod player;
 mod rules;

@@ -5,6 +5,9 @@
 
 use bevy::prelude::*;
 
+use crate::collect::{
+    check_finish, collect_cookies, play_again, CelebrationTime, GingerbreadCount,
+};
 use crate::course::{rebuild_course, CourseLayout, RestartRequested};
 use crate::hazards::{
     check_hazards, move_snowballs, spawn_due_snowballs, track_checkpoints, Hearts, LatestCheckpoint,
@@ -80,6 +83,8 @@ impl Plugin for RulesPlugin {
             .init_resource::<Hearts>()
             .init_resource::<LatestCheckpoint>()
             .init_resource::<RespawnGrace>()
+            .init_resource::<GingerbreadCount>()
+            .init_resource::<CelebrationTime>()
             .add_systems(PreUpdate, rebuild_course)
             .add_systems(
                 Update,
@@ -92,10 +97,13 @@ impl Plugin for RulesPlugin {
                     move_snowballs,
                     track_checkpoints,
                     check_hazards,
+                    collect_cookies,
+                    check_finish,
                 )
                     .chain()
                     .run_if(in_state(GameState::Playing)),
-            );
+            )
+            .add_systems(Update, play_again.run_if(in_state(GameState::Finished)));
     }
 }
 

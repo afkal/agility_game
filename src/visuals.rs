@@ -2,6 +2,7 @@
 
 use bevy::prelude::*;
 
+use crate::hud::HudPlugin;
 use crate::rules::ScrollPosition;
 
 /// Medium winter-sky blue. The black dog silhouette reads clearly against it,
@@ -12,7 +13,8 @@ pub struct VisualsPlugin;
 
 impl Plugin for VisualsPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(ClearColor(SKY_COLOR))
+        app.add_plugins(HudPlugin)
+            .insert_resource(ClearColor(SKY_COLOR))
             .add_systems(Startup, spawn_camera)
             .add_systems(PostUpdate, follow_scroll.before(TransformSystems::Propagate));
     }
@@ -21,7 +23,7 @@ impl Plugin for VisualsPlugin {
 #[derive(Component)]
 pub struct MainCamera;
 
-fn spawn_camera(mut commands: Commands) {
+pub fn spawn_camera(mut commands: Commands) {
     commands.spawn((Camera2d, MainCamera));
 }
 
