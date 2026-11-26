@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DOG_IDS } from './profiles.ts';
-import { DEFAULT_OUTFIT, ITEMS, itemForDay, outfitShapes, resolveOutfit, unlockedItems } from './wardrobe.ts';
+import { DEFAULT_OUTFIT, ITEMS, NO_PLACEMENT, itemForDay, outfitParts, resolveOutfit, shapesCentre, unlockedItems } from './wardrobe.ts';
 
 describe('wardrobe', () => {
   it('has one item for each of doors 1 to 9, with a look for every dog', () => {
@@ -30,6 +30,14 @@ describe('wardrobe', () => {
     expect(resolveOutfit({ head: '', neck: '' }, unlocked)).toEqual({ neck: 'collar' });
     // An item not won, or in the wrong slot, gives way to the starting outfit.
     expect(resolveOutfit({ head: 'elf-hat', back: 'santa-hat' }, unlocked)).toEqual(DEFAULT_OUTFIT);
-    expect(outfitShapes(DEFAULT_OUTFIT, 'elmo').length).toBeGreaterThan(0);
+  });
+
+  it('places each item by the studio settings for that dog, turning around its centre', () => {
+    const placed = { dx: 2, dy: -3, scale: 1.2, rotation: 10 };
+    const parts = outfitParts({ neck: 'collar', head: 'santa-hat' }, 'laku', { 'santa-hat': { laku: placed } });
+    expect(parts.map((p) => p.itemId)).toEqual(['collar', 'santa-hat']);
+    expect(parts[0]!.placement).toEqual(NO_PLACEMENT);
+    expect(parts[1]!.placement).toEqual(placed);
+    expect(shapesCentre([{ t: 'rect', x: 0, y: 0, w: 10, h: 4, c: 0 }])).toEqual({ x: 5, y: 2 });
   });
 });

@@ -11,6 +11,7 @@
 // looks the same everywhere.
 
 import type { DogId } from './profiles.ts';
+import { PLACEMENTS } from './wardrobe-placement.ts';
 
 export const SLOTS = ['back', 'neck', 'head'] as const;
 export type Slot = (typeof SLOTS)[number];
@@ -301,11 +302,70 @@ export function resolveOutfit(stored: Outfit, unlocked: readonly string[]): Outf
   return outfit;
 }
 
-/** Shapes to draw for an outfit, back first and head last. */
-export function outfitShapes(outfit: Outfit, dog: DogId): Shape[] {
+/**
+ * How an item is moved, scaled and turned from where its shapes are drawn, to
+ * sit right on one dog. Turning and scaling happen around the item's centre;
+ * `rotation` is in degrees.
+ */
+export interface Placement {
+  dx: number;
+  dy: number;
+  scale: number;
+  rotation: number;
+}
+
+export type Placements = Record<string, Partial<Record<DogId, Placement>>>;
+
+export const NO_PLACEMENT: Placement = { dx: 0, dy: 0, scale: 1, rotation: 0 };
+
+export function placementOf(itemId: string, dog: DogId, placements: Placements = PLACEMENTS): Placement {
+  return placements[itemId]?.[dog] ?? NO_PLACEMENT;
+}
+
+/** The middle of the box around some shapes: the point an item turns and scales around. */
+export function shapesCentre(shapes: readonly Shape[]): { x: number; y: number } {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  const add = (x: number, y: number) => {
+    minX = Math.min(minX, x);
+    maxX = Math.max(maxX, x);
+    minY = Math.min(minY, y);
+    maxY = Math.max(maxY, y);
+  };
+  for (const s of shapes) {
+    if (s.t === 'rect') {
+      add(s.x, s.y);
+      add(s.x + s.w, s.y + s.h);
+    } else if (s.t === 'circle') {
+      add(s.x - s.r, s.y - s.r);
+      add(s.x + s.r, s.y + s.r);
+    } else if (s.t === 'ellipse') {
+      add(s.x - s.w / 2, s.y - s.h / 2);
+      add(s.x + s.w / 2, s.y + s.h / 2);
+    } else {
+      for (let i = 0; i < s.p.length; i += 2) add(s.p[i]!, s.p[i + 1]!);
+    }
+  }
+  return shapes.length === 0 ? { x: 0, y: 0 } : { x: (minX + maxX) / 2, y: (minY + maxY) / 2 };
+}
+
+/** One worn item, ready to draw: its shapes, the point they turn around, and its placement. */
+export interface OutfitPart {
+  itemId: string;
+  shapes: Shape[];
+  centre: { x: number; y: number };
+  placement: Placement;
+}
+
+/** The items of an outfit to draw, back first and head last. */
+export function outfitParts(outfit: Outfit, dog: DogId, placements: Placements = PLACEMENTS): OutfitPart[] {
   return SLOTS.flatMap((slot) => {
     const id = outfit[slot];
     const item = id ? itemById(id) : undefined;
-    return item ? item.look(dog).shapes : [];
+    if (!item) return [];
+    const shapes = item.look(dog).shapes;
+    return [{ itemId: item.id, shapes, centre: shapesCentre(shapes), placement: placementOf(item.id, dog, placements) }];
   });
 }

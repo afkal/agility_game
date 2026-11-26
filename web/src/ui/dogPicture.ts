@@ -2,7 +2,7 @@
 // same shapes with Phaser, so the dog looks the same in both.
 
 import type { DogId } from '../../shared/profiles.ts';
-import { type Outfit, type Shape, outfitShapes } from '../../shared/wardrobe.ts';
+import { type Outfit, type OutfitPart, type Placements, type Shape, outfitParts } from '../../shared/wardrobe.ts';
 
 const SVG = 'http://www.w3.org/2000/svg';
 const hex = (color: number) => `#${color.toString(16).padStart(6, '0')}`;
@@ -36,11 +36,28 @@ function shapeElement(shape: Shape): SVGElement {
   }
 }
 
-/** The dog picture with its outfit drawn on top. */
-export function dogPicture(dog: DogId, outfit: Outfit, className = 'dog-picture'): SVGSVGElement {
-  const root = svg('svg', { viewBox: '-52 -62 104 104', class: className, 'aria-hidden': 'true' });
+/** One item as an SVG group, moved, turned and scaled into its place on the dog. */
+export function partElement(part: OutfitPart): SVGGElement {
+  const { centre, placement: p } = part;
+  const group = svg('g', {
+    transform: `translate(${centre.x + p.dx} ${centre.y + p.dy}) rotate(${p.rotation}) scale(${p.scale}) translate(${-centre.x} ${-centre.y})`,
+    'data-item': part.itemId,
+  });
+  group.append(...part.shapes.map(shapeElement));
+  return group;
+}
+
+/** The dog picture with its outfit drawn on top. The studio passes its unsaved placements. */
+export function dogPicture(
+  dog: DogId,
+  outfit: Outfit,
+  className = 'dog-picture',
+  placements?: Placements,
+  viewBox = '-52 -62 104 104',
+): SVGSVGElement {
+  const root = svg('svg', { viewBox, class: className, 'aria-hidden': 'true' });
   const image = svg('image', { href: '/standing-right.png', x: -75, y: -75, width: 150, height: 150 });
   if (dog === 'alma') image.setAttribute('class', 'dog-alma');
-  root.append(image, ...outfitShapes(outfit, dog).map(shapeElement));
+  root.append(image, ...outfitParts(outfit, dog, placements).map(partElement));
   return root;
 }

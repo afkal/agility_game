@@ -10,7 +10,7 @@ import type { DogId } from '../../shared/profiles.ts';
 import { leftEdge } from '../../shared/player.ts';
 import * as art from './art.ts';
 import { addWhiteDogTexture, dogLook, drawOutfit } from './dogs.ts';
-import { type Outfit, outfitShapes } from '../../shared/wardrobe.ts';
+import { type Outfit, outfitParts } from '../../shared/wardrobe.ts';
 import { Hud } from './hud.ts';
 import { Snow } from './snow.ts';
 
@@ -69,7 +69,7 @@ export class PlayScene extends Phaser.Scene {
   private snowballImages: Phaser.GameObjects.Image[] = [];
   private dog!: Phaser.GameObjects.Container;
   private dogPicture!: Phaser.GameObjects.Container;
-  private outfitGraphics!: Phaser.GameObjects.Graphics;
+  private outfitLayer!: Phaser.GameObjects.Container;
   private tilt = 0;
   private stride = 0;
   private lastDogX: number | null = null;
@@ -118,8 +118,20 @@ export class PlayScene extends Phaser.Scene {
 
   /** Dress the dog in a new outfit, such as one with a just-won item. */
   setOutfit(outfit: Outfit): void {
-    this.outfitGraphics.clear();
-    drawOutfit(this.outfitGraphics, outfitShapes(outfit, this.options.dogId));
+    this.outfitLayer.removeAll(true);
+    this.dressDog(outfit);
+  }
+
+  /** Draw each worn item in its own layer, moved, turned and scaled into place. */
+  private dressDog(outfit: Outfit): void {
+    for (const part of outfitParts(outfit, this.options.dogId)) {
+      const { centre, placement: p } = part;
+      const g = this.add.graphics().setPosition(-centre.x, -centre.y);
+      drawOutfit(g, part.shapes);
+      const item = this.add.container(centre.x + p.dx, centre.y + p.dy, [g]);
+      item.setRotation((p.rotation * Math.PI) / 180).setScale(p.scale);
+      this.outfitLayer.add(item);
+    }
   }
 
   /** Start the level again from the beginning. */
@@ -213,9 +225,9 @@ export class PlayScene extends Phaser.Scene {
   private createDog(): void {
     const look = dogLook(this.options.dogId);
     const picture = this.add.image(0, 0, look.texture).setDisplaySize(DOG_PICTURE_SIZE, DOG_PICTURE_SIZE);
-    this.outfitGraphics = this.add.graphics();
-    drawOutfit(this.outfitGraphics, outfitShapes(this.options.outfit, this.options.dogId));
-    this.dogPicture = this.add.container(0, -2, [picture, this.outfitGraphics]);
+    this.outfitLayer = this.add.container(0, 0);
+    this.dressDog(this.options.outfit);
+    this.dogPicture = this.add.container(0, -2, [picture, this.outfitLayer]);
     this.dog = this.add.container(0, 0, [this.dogPicture]).setDepth(10);
   }
 
