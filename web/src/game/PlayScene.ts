@@ -2,7 +2,7 @@
 // no game rules of its own.
 
 import Phaser from 'phaser';
-import { CANE_HEIGHT, CANE_WIDTH, COOKIE_RADIUS, SNOWBALL_RADIUS, WORLD_HEIGHT, WORLD_WIDTH } from '../../shared/constants.ts';
+import { JUMP_VELOCITY, SNOWMAN_HEIGHT, SNOWMAN_WIDTH, COOKIE_RADIUS, SNOWBALL_RADIUS, WORLD_HEIGHT, WORLD_WIDTH } from '../../shared/constants.ts';
 import { gapsOf, hurdleBox } from '../../shared/course.ts';
 import { type GameState, newGame, update } from '../../shared/game.ts';
 import type { Level } from '../../shared/levels/registry.ts';
@@ -29,6 +29,12 @@ const CHUNK = 1280;
 const DOG_PICTURE_SIZE = 150;
 /** How quickly the picture turns towards the slope angle, per second. */
 const TILT_RATE = 12;
+/** In the air the nose points up while rising and down while falling, this far at most. */
+const MAX_AIR_TILT = 0.45;
+/** The view rises to keep at least this much room above the dog's head. */
+const HEADROOM = 90;
+/** How quickly the view follows the dog up and back down, per second. */
+const CAMERA_RATE = 6;
 
 interface Backdrop {
   container: Phaser.GameObjects.Container;
@@ -48,6 +54,7 @@ export class PlayScene extends Phaser.Scene {
   private dog!: Phaser.GameObjects.Container;
   private dogPicture!: Phaser.GameObjects.Container;
   private tilt = 0;
+  private cameraY: number | null = null;
   private backdrops: Backdrop[] = [];
   private hud!: Hud;
   private snow!: Snow;
@@ -155,7 +162,8 @@ export class PlayScene extends Phaser.Scene {
     }
     for (const [x0, x1] of gapsOf(layout)) art.drawPond(chunkAt(x0), x0, x1);
     for (const x of layout.hurdles) art.drawHurdle(chunkAt(x), hurdleBox(x));
-    for (const x of layout.canes) art.drawCane(chunkAt(x), x, CANE_WIDTH, CANE_HEIGHT);
+    for (const x of layout.snowmen) art.drawSnowman(chunkAt(x), x, SNOWMAN_WIDTH, SNOWMAN_HEIGHT);
+    for (const branch of layout.branches) art.drawBranch(chunkAt(branch.x0), branch);
     for (const t of layout.tables) art.drawTable(chunkAt(t.x0), t);
     for (const a of layout.aframes) art.drawAFrame(chunkAt(a.x0), a);
     art.drawFinish(chunkAt(layout.finishX), layout.finishX);
@@ -191,7 +199,12 @@ export class PlayScene extends Phaser.Scene {
     const camera = this.cameras.main;
     camera.scrollX = leftEdge(state.scroll);
     // A short view shows the bottom of the world: the course, not the sky.
-    camera.scrollY = WORLD_HEIGHT - camera.height;
+    // It rises when the dog climbs high enough to leave the top of the view.
+    const bottomY = WORLD_HEIGHT - camera.height;
+    const dogTop = art.sy(state.dog.body.center.y + state.dog.body.half.y);
+    const targetY = Math.max(0, Math.min(bottomY, dogTop - HEADROOM));
+    this.cameraY = this.cameraY === null ? targetY : this.cameraY + (targetY - this.cameraY) * Math.min(dt * CAMERA_RATE, 1);
+    camera.scrollY = this.cameraY;
 
     for (const b of this.backdrops) {
       const x = (((b.baseX - state.scroll * b.depth) % b.span) + b.span) % b.span;
@@ -226,7 +239,9 @@ export class PlayScene extends Phaser.Scene {
 
     const body = state.dog.body;
     this.dog.setPosition(body.center.x, art.sy(body.center.y));
-    const target = state.dog.groundAngle ?? 0;
+    const { velocity } = state.dog.body;
+    const airTilt = Math.max(-1, Math.min(1, velocity.y / JUMP_VELOCITY)) * MAX_AIR_TILT;
+    const target = state.dog.groundAngle ?? airTilt;
     this.tilt += (target - this.tilt) * Math.min(dt * TILT_RATE, 1);
     this.dogPicture.setRotation(-this.tilt);
     this.dog.setAlpha(state.grace > 0 && Math.floor(this.elapsed * 8) % 2 === 0 ? 0.35 : 1);

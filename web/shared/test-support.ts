@@ -14,7 +14,8 @@ export function flatCourse(length: number, extra: Partial<CourseLayout> = {}): C
   return {
     ground: [[-1_000, length]],
     hurdles: [],
-    canes: [],
+    snowmen: [],
+    branches: [],
     tables: [],
     aframes: [],
     cookies: [],

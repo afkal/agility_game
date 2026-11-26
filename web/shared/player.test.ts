@@ -63,12 +63,53 @@ describe('the dog', () => {
 
   it('fires a jump tapped just before landing on landing', () => {
     const state = startRun(flatCourse(50_000));
-    // About 0.09 s of falling left, inside the jump buffer window.
-    state.dog.body.center.y += 8;
+    // Falling too fast for a second jump, about 0.09 s above the ground:
+    // inside the jump buffer window.
+    state.dog.body.center.y += 61;
+    state.dog.body.velocity.y = -600;
     state.dog.body.grounded = false;
     state.dog.coyote = 0;
     tap(state);
     runFor(state, 0.15);
     expect(bottom(state)).toBeGreaterThan(GROUND_TOP + 20);
+  });
+
+  it('jumps again from the air on a second tap, once per jump', () => {
+    const single = startRun(flatCourse(50_000));
+    tap(single);
+    let singlePeak = -Infinity;
+    for (let t = 0; t < 1; t += FRAME) {
+      runFor(single, FRAME);
+      singlePeak = Math.max(singlePeak, bottom(single));
+    }
+
+    const double = startRun(flatCourse(50_000));
+    tap(double);
+    runFor(double, 0.3);
+    tap(double);
+    runFor(double, 0.1);
+    tap(double); // A third tap does nothing in the air.
+    let doublePeak = -Infinity;
+    for (let t = 0; t < 1.5; t += FRAME) {
+      runFor(double, FRAME);
+      doublePeak = Math.max(doublePeak, bottom(double));
+    }
+    expect(doublePeak).toBeGreaterThan(singlePeak + 80);
+    expect(doublePeak).toBeLessThan(singlePeak + 160);
+    expect(double.dog.body.grounded).toBe(true);
+    expect(double.dog.airJumped).toBe(false);
+  });
+
+  it('lands on a branch from above, jumps up through it and runs under it', () => {
+    const branch = { x0: -1_000, x1: 50_000, top: GROUND_TOP + 130 };
+    const under = startRun(flatCourse(50_000, { branches: [branch] }));
+    runFor(under, 1);
+    expect(bottom(under)).toBeCloseTo(GROUND_TOP, 2);
+
+    const up = startRun(flatCourse(50_000, { branches: [branch] }));
+    tap(up);
+    runFor(up, 1.5);
+    expect(up.dog.body.grounded).toBe(true);
+    expect(bottom(up)).toBeCloseTo(branch.top, 2);
   });
 });

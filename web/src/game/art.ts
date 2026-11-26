@@ -6,7 +6,7 @@
 
 import type Phaser from 'phaser';
 import { GROUND_BOTTOM, GROUND_TOP, WORLD_HEIGHT } from '../../shared/constants.ts';
-import { type AFrame, type Table, aframeApex } from '../../shared/course.ts';
+import { type AFrame, type Branch, type Table, aframeApex } from '../../shared/course.ts';
 import type { Aabb } from '../../shared/physics.ts';
 
 export const SKY = 0x73adeb;
@@ -75,29 +75,61 @@ export function drawHurdle(g: G, b: Aabb): void {
   for (const dx of [-9, 9]) g.fillEllipse(cx + dx, sy(b.max.y - 8), 16, 10);
 }
 
-/**
- * A standing candy cane with its hook, thicker and taller than a hurdle, so it
- * reads as something to keep clear of.
- */
-export function drawCane(g: G, x: number, width: number, height: number): void {
-  const hookRadius = width;
-  const stemTop = GROUND_TOP + height - hookRadius;
-  const stripes = 6;
-  const h = (stemTop - GROUND_TOP) / stripes;
-  for (let i = 0; i < stripes; i++) {
-    rect(g, candyStripe(i), x, GROUND_TOP + h * i, x + width, GROUND_TOP + h * (i + 1));
-  }
-  // The hook bends forward over the top in alternating stripes.
-  const cx = x + width / 2 + hookRadius;
-  const cy = sy(stemTop);
-  const segments = 4;
-  for (let i = 0; i < segments; i++) {
-    g.lineStyle(width, candyStripe(i + stripes), 1);
-    g.beginPath();
-    g.arc(cx, cy, hookRadius, Math.PI + (i * Math.PI) / segments, Math.PI + ((i + 1) * Math.PI) / segments);
-    g.strokePath();
+/** A snowman with a carrot nose, a red scarf and a top hat, standing on the course. */
+export function drawSnowman(g: G, x: number, width: number, height: number): void {
+  const cx = x + width / 2;
+  const base = GROUND_TOP;
+  const bottom = width * 0.48;
+  const middle = width * 0.36;
+  const head = width * 0.27;
+  const middleY = base + 2 * bottom + middle * 0.6;
+  const headY = base + height - head;
+  g.fillStyle(SNOW_SHADE, 1);
+  g.fillEllipse(cx, sy(base + 2), width * 1.2, 8);
+  for (const [r, y] of [
+    [bottom, base + bottom],
+    [middle, middleY],
+    [head, headY],
+  ] as const) {
+    circle(g, SNOW_WHITE, cx, y, r);
+    g.lineStyle(1.5, SNOW_SHADE, 1);
+    g.strokeCircle(cx, sy(y), r);
   }
   g.lineStyle(0, 0, 0);
+  // Coal buttons and eyes.
+  for (const dy of [-6, 4]) circle(g, 0x2b2b33, cx, middleY + dy, 2.2);
+  for (const dx of [-4, 4]) circle(g, 0x2b2b33, cx + dx, headY + 3, 1.8);
+  // A carrot nose pointing at the oncoming dog.
+  triangle(g, 0xf28c28, cx - 1, headY + 1, cx - 1, headY - 3, cx - 14, headY - 1);
+  // Red scarf with a loose end.
+  rect(g, CANDY_RED, cx - head - 1, headY - head - 4, cx + head + 1, headY - head + 2);
+  rect(g, CANDY_RED, cx + 2, headY - head - 14, cx + 8, headY - head - 2);
+  // Top hat.
+  rect(g, 0x2b2b33, cx - head - 3, headY + head - 3, cx + head + 3, headY + head + 1);
+  rect(g, 0x2b2b33, cx - head * 0.7, headY + head, cx + head * 0.7, headY + head + 14);
+  rect(g, CANDY_RED, cx - head * 0.7, headY + head + 1, cx + head * 0.7, headY + head + 4);
+}
+
+/** A snowy spruce branch in the air, with a few baubles hanging under it. */
+export function drawBranch(g: G, b: Branch): void {
+  rect(g, TRUNK, b.x0 - 6, b.top - 14, b.x1, b.top - 6);
+  g.fillStyle(PINE_GREEN, 1);
+  for (let x = b.x0 + 6; x < b.x1; x += 22) {
+    g.fillEllipse(x, sy(b.top - 12), 34, 20);
+  }
+  g.fillStyle(DARK_PINE, 1);
+  for (let x = b.x0 + 17; x < b.x1 - 6; x += 22) {
+    g.fillEllipse(x, sy(b.top - 18), 22, 12);
+  }
+  g.fillStyle(SNOW_WHITE, 1);
+  g.fillRoundedRect(b.x0 - 8, sy(b.top + 3), b.x1 - b.x0 + 14, 9, 4.5);
+  const colors = [CANDY_RED, GOLD, CANDY_RED];
+  const step = (b.x1 - b.x0) / (colors.length + 1);
+  colors.forEach((color, i) => {
+    const x = b.x0 + step * (i + 1);
+    rect(g, 0x8a8a8a, x - 0.75, b.top - 27, x + 0.75, b.top - 18);
+    circle(g, color, x, b.top - 31, 6);
+  });
 }
 
 /** A small flag for the progress count in the corner of the view. */

@@ -1,6 +1,8 @@
 // The dog: jumping, running with the scroll and catching up after a stop.
 
 import {
+  AIR_JUMP_LATEST_FALL,
+  AIR_JUMP_VELOCITY,
   CATCH_UP_GAIN,
   COYOTE_TIME,
   DOG_HALF_SIZE,
@@ -22,6 +24,8 @@ export interface Dog {
   blocked: boolean;
   /** Slope underfoot in radians, or null in the air. The picture tilts to it. */
   groundAngle: number | null;
+  /** The second jump of this jump has been used; it comes back on landing. */
+  airJumped: boolean;
 }
 
 export function dogStandingAt(feet: Vec2): Dog {
@@ -36,6 +40,7 @@ export function dogStandingAt(feet: Vec2): Dog {
     jumpBuffer: 0,
     blocked: false,
     groundAngle: 0,
+    airJumped: false,
   };
 }
 
@@ -75,6 +80,11 @@ export function moveDog(dog: Dog, scroll: number, speed: number, solids: readonl
     dog.body.grounded = false;
     dog.jumpBuffer = 0;
     dog.coyote = 0;
+  } else if (dog.jumpBuffer > 0 && !dog.airJumped && dog.body.velocity.y > -AIR_JUMP_LATEST_FALL) {
+    // A second tap in the air jumps again from where the dog is.
+    dog.body.velocity.y = AIR_JUMP_VELOCITY;
+    dog.airJumped = true;
+    dog.jumpBuffer = 0;
   }
 
   const outcome = step(dog.body, solids, GRAVITY, dt);
@@ -82,5 +92,6 @@ export function moveDog(dog: Dog, scroll: number, speed: number, solids: readonl
   dog.groundAngle = outcome.groundAngle;
 
   dog.coyote = dog.body.grounded ? COYOTE_TIME : Math.max(dog.coyote - dt, 0);
+  if (dog.body.grounded) dog.airJumped = false;
   dog.jumpBuffer = Math.max(dog.jumpBuffer - dt, 0);
 }

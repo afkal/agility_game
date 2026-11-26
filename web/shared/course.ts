@@ -2,8 +2,8 @@
 // queries the rules and the layout checks share.
 
 import {
-  CANE_HEIGHT,
-  CANE_WIDTH,
+  SNOWMAN_HEIGHT,
+  SNOWMAN_WIDTH,
   GROUND_BOTTOM,
   GROUND_TOP,
   HURDLE_HEIGHT,
@@ -13,6 +13,12 @@ import {
 import { type Aabb, type Ramp, type Solid, type Vec2, rampHeightAt } from './physics.ts';
 
 export interface Table {
+  x0: number;
+  x1: number;
+  top: number;
+}
+
+export interface Branch {
   x0: number;
   x1: number;
   top: number;
@@ -30,8 +36,10 @@ export interface CourseLayout {
   ground: [number, number][];
   /** Left x of each candy-cane hurdle standing on the ground. */
   hurdles: number[];
-  /** Left x of each standing candy cane: no collision, but touching one costs a heart. */
-  canes: number[];
+  /** Left x of each snowman: no collision, but touching one costs a heart. */
+  snowmen: number[];
+  /** Snowy spruce branches in the air: land on them from above, pass under or jump up through them. */
+  branches: Branch[];
   tables: Table[];
   aframes: AFrame[];
   cookies: Vec2[];
@@ -63,8 +71,8 @@ export function hurdleBox(x: number): Aabb {
   return { min: { x, y: GROUND_TOP }, max: { x: x + HURDLE_WIDTH, y: GROUND_TOP + HURDLE_HEIGHT } };
 }
 
-export function caneBox(x: number): Aabb {
-  return { min: { x, y: GROUND_TOP }, max: { x: x + CANE_WIDTH, y: GROUND_TOP + CANE_HEIGHT } };
+export function snowmanBox(x: number): Aabb {
+  return { min: { x, y: GROUND_TOP }, max: { x: x + SNOWMAN_WIDTH, y: GROUND_TOP + SNOWMAN_HEIGHT } };
 }
 
 export function tableBox(table: Table): Aabb {
@@ -79,6 +87,7 @@ export function solidsOf(layout: CourseLayout): Solid[] {
   for (const a of layout.aframes) {
     for (const ramp of aframeRamps(a)) solids.push({ kind: 'ramp', ramp });
   }
+  for (const branch of layout.branches) solids.push({ kind: 'ledge', ledge: branch });
   return solids;
 }
 
@@ -93,7 +102,11 @@ export function gapsOf(layout: CourseLayout): [number, number][] {
   return gaps;
 }
 
-/** Height of the highest walkable surface under `x`, or null over a gap. */
+/**
+ * Height of the highest walkable surface under `x` on the ground level, or
+ * null over a gap. Branches in the air do not count: nothing respawns or rolls
+ * on them.
+ */
 export function surfaceAt(layout: CourseLayout, x: number): number | null {
   let best: number | null = null;
   const consider = (h: number) => {
@@ -127,7 +140,8 @@ export class Builder {
   layout: CourseLayout = {
     ground: [],
     hurdles: [],
-    canes: [],
+    snowmen: [],
+    branches: [],
     tables: [],
     aframes: [],
     cookies: [],
@@ -169,11 +183,28 @@ export class Builder {
     this.ground(length);
   }
 
-  /** A standing candy cane to jump over, with a cookie above it for a clean jump. */
-  cane(): void {
+  /**
+   * Two snowy spruce branches in the air: a low one to jump onto and a higher
+   * one beyond it, with cookies up there that only a climb or a second jump
+   * reaches. Running along the ground underneath is safe too.
+   */
+  branches(): void {
+    const x0 = this.x + 150;
+    const low: Branch = { x0, x1: x0 + 260, top: GROUND_TOP + 140 };
+    const high: Branch = { x0: x0 + 340, x1: x0 + 600, top: GROUND_TOP + 260 };
+    this.layout.branches.push(low, high);
+    this.cookie(low.x0 + 130, low.top + COOKIE_LIFT);
+    this.cookie(high.x0 + 70, high.top + COOKIE_LIFT);
+    this.cookie(high.x0 + 190, high.top + COOKIE_LIFT);
+    this.cookie(high.x0 + 130, GROUND_TOP + COOKIE_LIFT);
+    this.ground(high.x1 - this.x + 300);
+  }
+
+  /** A snowman to jump over, with a cookie above it for a clean jump. */
+  snowman(): void {
     const x = this.x + 200;
-    this.layout.canes.push(x);
-    this.cookie(x + CANE_WIDTH / 2, GROUND_TOP + CANE_HEIGHT + 70);
+    this.layout.snowmen.push(x);
+    this.cookie(x + SNOWMAN_WIDTH / 2, GROUND_TOP + SNOWMAN_HEIGHT + 70);
     this.ground(400);
   }
 

@@ -50,11 +50,19 @@ export const HURDLE_WIDTH = 16;
 export const HURDLE_HEIGHT = 45;
 export const COOKIE_RADIUS = 18;
 
-/** A standing candy cane: the dog must jump clear of it, and touching it costs a heart. */
-export const CANE_WIDTH = 14;
-export const CANE_HEIGHT = 75;
-/** Cane hits use a slightly narrower box, so brushing past the hook is a miss. */
-export const CANE_HIT_SHRINK = 3;
+/** A snowman on the course: the dog must jump clear of it, and knocking it costs a heart. */
+export const SNOWMAN_WIDTH = 40;
+export const SNOWMAN_HEIGHT = 74;
+/** Snowman hits use a narrower box, so brushing its round sides is a miss. */
+export const SNOWMAN_HIT_SHRINK = 8;
+
+/** A second tap in the air jumps again from there, once per jump, this fast. */
+export const AIR_JUMP_VELOCITY = 650;
+/**
+ * The second jump only works until the dog falls this fast. A tap later in
+ * the fall is kept for the landing instead, as before.
+ */
+export const AIR_JUMP_LATEST_FALL = 450;
 
 /** Fixed course speed of door 1, the original level's normal pace. */
 export const DOOR_ONE_SPEED = 200;

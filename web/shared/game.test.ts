@@ -83,16 +83,16 @@ describe('hearts and checkpoints', () => {
     expect(state.dog.body.center.x).toBe(x);
   });
 
-  it('costs a heart for touching a candy cane', () => {
-    const state = startRun(flatCourse(50_000, { canes: [400] }));
+  it('costs a heart for knocking over a snowman', () => {
+    const state = startRun(flatCourse(50_000, { snowmen: [400] }));
     runUntilHeartLost(state, 4);
     expect(state.hearts).toBe(2);
   });
 
-  it('costs nothing for jumping clear over a candy cane', () => {
-    const state = startRun(flatCourse(50_000, { canes: [400] }));
-    // Take off so the dog is at the top of its jump over the cane.
-    const takeOff = 400 - DOG_HALF_SIZE.x - 60;
+  it('costs nothing for jumping clear over a snowman', () => {
+    const state = startRun(flatCourse(50_000, { snowmen: [400] }));
+    // Take off so the dog is at the top of its jump over the snowman.
+    const takeOff = 400 - DOG_HALF_SIZE.x - 40;
     while (state.dog.body.center.x < takeOff) update(state, { jump: false }, FRAME);
     tap(state);
     runFor(state, 3);

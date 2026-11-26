@@ -2,7 +2,7 @@ import { Builder, type CourseLayout } from '../course.ts';
 
 /**
  * Door 1, the original Christmas course: an easy start, then hurdles, tables,
- * gaps, the A-frame and snowballs, with candy canes that must not be touched
+ * gaps, the A-frame and snowballs, with snowmen that must not be knocked over
  * from the middle on, mixed more and more towards the finish.
  */
 export function christmasCourse(): CourseLayout {
@@ -14,7 +14,8 @@ export function christmasCourse(): CourseLayout {
   b.hurdle();
   b.flat(400, false);
   b.table(350, 70);
-  b.flat(500, true);
+  // Branches to climb for cookies, or to run under.
+  b.branches();
   b.checkpoint();
   // Gaps.
   b.gap(100);
@@ -36,13 +37,13 @@ export function christmasCourse(): CourseLayout {
   b.snowball();
   b.flat(400, false);
   b.aframe();
-  b.flat(500, true);
+  b.branches();
   b.checkpoint();
-  // Mixing it up, and the first candy cane.
+  // Mixing it up, and the first snowman.
   b.gap(110);
   b.flat(400, true);
   b.table(400, 90);
-  b.cane();
+  b.snowman();
   b.hurdle();
   b.flat(500, true);
   b.snowball();
@@ -57,12 +58,12 @@ export function christmasCourse(): CourseLayout {
   b.flat(400, true);
   b.checkpoint();
   b.aframe();
-  b.cane();
+  b.snowman();
   b.gap(120);
   b.flat(400, true);
   b.snowball();
   b.hurdle();
-  b.flat(500, true);
+  b.branches();
   b.checkpoint();
   // Final stretch.
   b.table(300, 100);
@@ -70,9 +71,9 @@ export function christmasCourse(): CourseLayout {
   b.gap(130);
   b.flat(400, true);
   b.stairs(90, 170);
-  b.cane();
+  b.snowman();
   b.hurdle();
-  b.cane();
+  b.snowman();
   b.hurdle();
   b.flat(400, true);
   b.snowball();

@@ -2,7 +2,7 @@
 // fixed speed.
 
 import { describe, expect, it } from 'vitest';
-import { CANE_HEIGHT, CANE_WIDTH, COOKIE_RADIUS, DOG_HALF_SIZE, GRAVITY, GROUND_TOP, HURDLE_HEIGHT, HURDLE_WIDTH, JUMP_VELOCITY } from '../constants.ts';
+import { SNOWMAN_HEIGHT, SNOWMAN_WIDTH, COOKIE_RADIUS, DOG_HALF_SIZE, GRAVITY, GROUND_TOP, HURDLE_HEIGHT, HURDLE_WIDTH, JUMP_VELOCITY } from '../constants.ts';
 import { gapsOf, solidsOf, surfaceAt } from '../course.ts';
 import { aabbFromCenter, overlaps } from '../physics.ts';
 import { LEVELS } from './registry.ts';
@@ -36,15 +36,15 @@ describe.each(LEVELS.map((level) => [level.day, level] as const))('door %i', (_d
     expect(level.speed * timeAbove(HURDLE_HEIGHT)).toBeGreaterThanOrEqual(needed);
   });
 
-  it('has candy canes on flat ground that a jump clears', () => {
-    const clearDistance = timeAbove(CANE_HEIGHT + MARGIN) * level.speed;
-    for (const x of layout.canes) {
-      expect(clearDistance, `cane at ${x}`).toBeGreaterThan(2 * DOG_HALF_SIZE.x + CANE_WIDTH + MARGIN);
-      for (const probe of [x - 150, x, x + CANE_WIDTH + 150]) {
-        expect(surfaceAt(layout, probe), `cane at ${x}`).toBe(GROUND_TOP);
+  it('has snowmen on flat ground that a jump clears', () => {
+    const clearDistance = timeAbove(SNOWMAN_HEIGHT + MARGIN) * level.speed;
+    for (const x of layout.snowmen) {
+      expect(clearDistance, `snowman at ${x}`).toBeGreaterThan(2 * DOG_HALF_SIZE.x + SNOWMAN_WIDTH + MARGIN);
+      for (const probe of [x - 150, x, x + SNOWMAN_WIDTH + 150]) {
+        expect(surfaceAt(layout, probe), `snowman at ${x}`).toBe(GROUND_TOP);
       }
     }
-    expect(layout.canes.length).toBeGreaterThan(0);
+    expect(layout.snowmen.length).toBeGreaterThan(0);
   });
 
   it('has every step up lower than a jump', () => {
@@ -67,13 +67,32 @@ describe.each(LEVELS.map((level) => [level.day, level] as const))('door %i', (_d
     }
   });
 
+  /** The highest place to stand under `x` that is below `y`, branches included. */
+  const standBelow = (x: number, y: number) =>
+    Math.max(
+      surfaceAt(layout, x) ?? GROUND_TOP,
+      ...layout.branches.filter((b) => x >= b.x0 && x <= b.x1 && b.top < y).map((b) => b.top),
+    );
+
+  it('has every branch within one jump of the ground or a lower branch', () => {
+    for (const branch of layout.branches) {
+      const from = Math.max(
+        GROUND_TOP,
+        ...layout.branches.filter((b) => b.top < branch.top && b.x1 >= branch.x0 - 200 && b.x0 <= branch.x1).map((b) => b.top),
+      );
+      expect(branch.top - from, `branch at ${branch.x0}`).toBeLessThanOrEqual(jumpHeight - MARGIN);
+      // Room to run underneath.
+      expect(branch.top - GROUND_TOP, `branch at ${branch.x0}`).toBeGreaterThan(2 * DOG_HALF_SIZE.y + MARGIN);
+    }
+  });
+
   it('has no cookie inside an obstacle or out of reach', () => {
     const reachAboveSurface = jumpHeight + 2 * DOG_HALF_SIZE.y - MARGIN;
     const boxes = solidsOf(layout).flatMap((s) => (s.kind === 'box' ? [s.box] : []));
     for (const c of layout.cookies) {
       const cookieBox = aabbFromCenter(c, { x: COOKIE_RADIUS, y: COOKIE_RADIUS });
       expect(boxes.some((b) => overlaps(cookieBox, b)), `cookie at ${c.x},${c.y}`).toBe(false);
-      const below = surfaceAt(layout, c.x) ?? GROUND_TOP;
+      const below = standBelow(c.x, c.y);
       expect(c.y - COOKIE_RADIUS - below, `cookie at ${c.x},${c.y}`).toBeLessThanOrEqual(reachAboveSurface);
     }
   });
@@ -81,7 +100,7 @@ describe.each(LEVELS.map((level) => [level.day, level] as const))('door %i', (_d
   it('ends after every obstacle and takes two to three minutes', () => {
     const lastObstacle = Math.max(
       ...layout.hurdles,
-      ...layout.canes,
+      ...layout.snowmen,
       ...layout.tables.map((t) => t.x1),
       ...layout.aframes.map((a) => a.x0 + 2 * a.halfWidth),
       ...gapsOf(layout).map((g) => g[1]),

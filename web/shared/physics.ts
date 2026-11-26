@@ -1,8 +1,8 @@
 // Kinematic movement and collision for the dog.
 //
 // The course is made of axis-aligned boxes (ground, tables, hurdles) and ramps
-// (the two sides of the A-frame). Boxes block from every side; ramps are
-// walkable surfaces only. Everything here is plain math, so it runs and is
+// (the two sides of the A-frame) and ledges (branches in the air). Boxes block
+// from every side; ramps and ledges are walkable surfaces only. Everything here is plain math, so it runs and is
 // tested without a browser.
 
 export interface Vec2 {
@@ -21,7 +21,14 @@ export interface Ramp {
   end: Vec2;
 }
 
-export type Solid = { kind: 'box'; box: Aabb } | { kind: 'ramp'; ramp: Ramp };
+/** A thin platform in the air that only holds from above: the dog lands on it, but passes under and jumps up through it. */
+export interface Ledge {
+  x0: number;
+  x1: number;
+  top: number;
+}
+
+export type Solid = { kind: 'box'; box: Aabb } | { kind: 'ramp'; ramp: Ramp } | { kind: 'ledge'; ledge: Ledge };
 
 /** A moving body described by its centre and half extents. */
 export interface Body {
@@ -148,6 +155,12 @@ export function step(body: Body, solids: readonly Solid[], gravity: number, dt: 
         consider(b.max.y, 0);
       } else if (body.velocity.y > 0 && current.max.y <= b.min.y + EPSILON && current.max.y + dy > b.min.y) {
         ceiling = ceiling === null ? b.min.y : Math.min(ceiling, b.min.y);
+      }
+    } else if (solid.kind === 'ledge') {
+      const l = solid.ledge;
+      const horizontalOverlap = current.min.x < l.x1 - EPSILON && current.max.x > l.x0 + EPSILON;
+      if (horizontalOverlap && body.velocity.y <= 0 && current.min.y >= l.top - EPSILON && newBottom <= l.top) {
+        consider(l.top, 0);
       }
     } else {
       const surface = rampHeightAt(solid.ramp, body.center.x);

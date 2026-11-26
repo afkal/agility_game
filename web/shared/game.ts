@@ -12,10 +12,10 @@ import {
   SNOWBALL_RADIUS,
   SNOWBALL_SPEED,
   STARTING_HEARTS,
-  CANE_HIT_SHRINK,
+  SNOWMAN_HIT_SHRINK,
   COOKIE_RADIUS,
 } from './constants.ts';
-import { type CourseLayout, caneBox, solidsOf, surfaceAt } from './course.ts';
+import { type CourseLayout, snowmanBox, solidsOf, surfaceAt } from './course.ts';
 import { type Solid, aabbFromCenter, bodyBox, overlaps } from './physics.ts';
 import { type Dog, dogStandingAt, leftEdge, moveDog, rightEdge, scrollWithHomeAt } from './player.ts';
 
@@ -156,7 +156,7 @@ function trackCheckpoints(state: GameState): void {
 
 /**
  * Lose a heart if the dog fell, got caught by the edge, hit a snowball or
- * touched a candy cane. Returns true when that was the last heart.
+ * knocked over a snowman. Returns true when that was the last heart.
  */
 function checkHazards(state: GameState, dt: number): boolean {
   state.grace = Math.max(state.grace - dt, 0);
@@ -170,15 +170,15 @@ function checkHazards(state: GameState, dt: number): boolean {
       const half = ball.radius - SNOWBALL_HIT_SHRINK;
       return overlaps(aabbFromCenter({ x: ball.x, y: ball.y }, { x: half, y: half }), dogBox);
     });
-  const hitCane =
+  const hitSnowman =
     !protectedNow &&
-    state.layout.canes.some((x) => {
-      const box = caneBox(x);
-      box.min.x += CANE_HIT_SHRINK;
-      box.max.x -= CANE_HIT_SHRINK;
+    state.layout.snowmen.some((x) => {
+      const box = snowmanBox(x);
+      box.min.x += SNOWMAN_HIT_SHRINK;
+      box.max.x -= SNOWMAN_HIT_SHRINK;
       return overlaps(box, dogBox);
     });
-  if (!(fell || caughtByEdge || hitSnowball || hitCane)) return false;
+  if (!(fell || caughtByEdge || hitSnowball || hitSnowman)) return false;
 
   state.hearts = Math.max(state.hearts - 1, 0);
   if (state.hearts === 0) {
