@@ -216,6 +216,15 @@ describe('starting line', () => {
       { name: 'Eveliina', dog: 'alma', outfit: { neck: 'collar' } },
     ]);
   });
+
+  it('shows the test-mode outfits in test mode', async () => {
+    const { call, register } = setup(december(3));
+    const player = await register('Timo');
+    const test = { 'x-test-key': TEST_KEY };
+    await call('PUT', `/api/players/${player.id}/outfit`, { dog: 'elmo', slot: 'head', item: 'antlers' }, test);
+    expect((await call('GET', '/api/roster', undefined, test)).body.players[0].outfit).toEqual({ neck: 'collar', head: 'antlers' });
+    expect((await call('GET', '/api/roster')).body.players[0].outfit).toEqual({ neck: 'collar' });
+  });
 });
 
 describe('wardrobe', () => {

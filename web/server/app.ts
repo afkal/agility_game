@@ -135,8 +135,10 @@ export function createApp(options: AppOptions): Hono {
   });
 
   // Who has joined, with their dog as it is dressed, for the calendar's starting line.
+  // In test mode the dogs wear what they wear in test mode, as everywhere else there.
   app.get('/api/roster', (c) => {
-    const players = store.listPlayers().map((p) => ({ name: p.name, dog: p.dog, outfit: wardrobeOf(p.id, false).dogs[p.dog].outfit }));
+    const testMode = isTest(c.req.header('x-test-key'));
+    const players = store.listPlayers().map((p) => ({ name: p.name, dog: p.dog, outfit: wardrobeOf(p.id, testMode).dogs[p.dog].outfit }));
     return c.json({ players });
   });
 
