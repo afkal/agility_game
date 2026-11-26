@@ -12,9 +12,10 @@ import {
   SNOWBALL_RADIUS,
   SNOWBALL_SPEED,
   STARTING_HEARTS,
+  CANE_HIT_SHRINK,
   COOKIE_RADIUS,
 } from './constants.ts';
-import { type CourseLayout, solidsOf, surfaceAt } from './course.ts';
+import { type CourseLayout, caneBox, solidsOf, surfaceAt } from './course.ts';
 import { type Solid, aabbFromCenter, bodyBox, overlaps } from './physics.ts';
 import { type Dog, dogStandingAt, leftEdge, moveDog, rightEdge, scrollWithHomeAt } from './player.ts';
 
@@ -35,7 +36,7 @@ export interface Cookie {
 }
 
 /** Something that happened during an update, for sounds and visual cues. */
-export type GameEvent = 'cookie' | 'checkpoint' | 'heartLost' | 'restart' | 'finish';
+export type GameEvent = 'cookie' | 'checkpoint' | 'heartLost' | 'gameOver' | 'finish';
 
 export interface GameState {
   layout: CourseLayout;
@@ -57,7 +58,8 @@ export interface GameState {
   /** Snowball start positions that have not rolled in yet. */
   pendingSnowballs: number[];
   snowballs: Snowball[];
-  phase: 'playing' | 'finished';
+  /** `over` once the last heart is lost; the player chooses whether to try again. */
+  phase: 'playing' | 'finished' | 'over';
   /** Events from the latest update. */
   events: GameEvent[];
 }
@@ -89,7 +91,7 @@ export function newGame(layout: CourseLayout, speed: number): GameState {
   };
 }
 
-/** Advance the run by `rawDt` seconds. Does nothing once the run is finished. */
+/** Advance the run by `rawDt` seconds. Does nothing once the run is finished or over. */
 export function update(state: GameState, input: GameInput, rawDt: number): void {
   state.events = [];
   if (state.phase !== 'playing') return;
@@ -152,7 +154,10 @@ function trackCheckpoints(state: GameState): void {
   });
 }
 
-/** Lose a heart if the dog fell, got caught by the edge or hit a snowball. Returns true on a full restart. */
+/**
+ * Lose a heart if the dog fell, got caught by the edge, hit a snowball or
+ * touched a candy cane. Returns true when that was the last heart.
+ */
 function checkHazards(state: GameState, dt: number): boolean {
   state.grace = Math.max(state.grace - dt, 0);
   const dogBox = bodyBox(state.dog.body);
@@ -165,12 +170,20 @@ function checkHazards(state: GameState, dt: number): boolean {
       const half = ball.radius - SNOWBALL_HIT_SHRINK;
       return overlaps(aabbFromCenter({ x: ball.x, y: ball.y }, { x: half, y: half }), dogBox);
     });
-  if (!(fell || caughtByEdge || hitSnowball)) return false;
+  const hitCane =
+    !protectedNow &&
+    state.layout.canes.some((x) => {
+      const box = caneBox(x);
+      box.min.x += CANE_HIT_SHRINK;
+      box.max.x -= CANE_HIT_SHRINK;
+      return overlaps(box, dogBox);
+    });
+  if (!(fell || caughtByEdge || hitSnowball || hitCane)) return false;
 
   state.hearts = Math.max(state.hearts - 1, 0);
   if (state.hearts === 0) {
-    Object.assign(state, newGame(state.layout, state.speed));
-    state.events = ['heartLost', 'restart'];
+    state.phase = 'over';
+    state.events.push('heartLost', 'gameOver');
     return true;
   }
 

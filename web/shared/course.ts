@@ -2,6 +2,8 @@
 // queries the rules and the layout checks share.
 
 import {
+  CANE_HEIGHT,
+  CANE_WIDTH,
   GROUND_BOTTOM,
   GROUND_TOP,
   HURDLE_HEIGHT,
@@ -28,6 +30,8 @@ export interface CourseLayout {
   ground: [number, number][];
   /** Left x of each candy-cane hurdle standing on the ground. */
   hurdles: number[];
+  /** Left x of each standing candy cane: no collision, but touching one costs a heart. */
+  canes: number[];
   tables: Table[];
   aframes: AFrame[];
   cookies: Vec2[];
@@ -57,6 +61,10 @@ export function groundBox(x0: number, x1: number): Aabb {
 
 export function hurdleBox(x: number): Aabb {
   return { min: { x, y: GROUND_TOP }, max: { x: x + HURDLE_WIDTH, y: GROUND_TOP + HURDLE_HEIGHT } };
+}
+
+export function caneBox(x: number): Aabb {
+  return { min: { x, y: GROUND_TOP }, max: { x: x + CANE_WIDTH, y: GROUND_TOP + CANE_HEIGHT } };
 }
 
 export function tableBox(table: Table): Aabb {
@@ -110,12 +118,16 @@ export function surfaceAt(layout: CourseLayout, x: number): number | null {
  */
 const COOKIE_LIFT = 60;
 
+/** Some cookies on flat ground float this high, so the dog has to jump for them. */
+const HIGH_COOKIE_LIFT = 150;
+
 /** Lays a course out left to right from a cursor. */
 export class Builder {
   x = -600;
   layout: CourseLayout = {
     ground: [],
     hurdles: [],
+    canes: [],
     tables: [],
     aframes: [],
     cookies: [],
@@ -140,17 +152,29 @@ export class Builder {
     this.layout.cookies.push({ x, y });
   }
 
-  /** Flat snowy ground, optionally with a row of cookies along it. */
+  /**
+   * Flat snowy ground, optionally with a row of cookies along it. Every third
+   * cookie floats higher, out of reach without a jump.
+   */
   flat(length: number, cookies: boolean): void {
     const start = this.x;
     if (cookies) {
       const count = Math.floor(length / 180);
       for (let i = 0; i < count; i++) {
         const x = start + 150 + i * 180;
-        if (x < start + length - 100) this.cookie(x, GROUND_TOP + COOKIE_LIFT);
+        const lift = i % 3 === 1 ? HIGH_COOKIE_LIFT : COOKIE_LIFT;
+        if (x < start + length - 100) this.cookie(x, GROUND_TOP + lift);
       }
     }
     this.ground(length);
+  }
+
+  /** A standing candy cane to jump over, with a cookie above it for a clean jump. */
+  cane(): void {
+    const x = this.x + 200;
+    this.layout.canes.push(x);
+    this.cookie(x + CANE_WIDTH / 2, GROUND_TOP + CANE_HEIGHT + 70);
+    this.ground(400);
   }
 
   /** A hurdle with an arc of cookies over it that a clean jump collects. */

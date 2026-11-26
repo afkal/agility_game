@@ -2,7 +2,7 @@
 // no game rules of its own.
 
 import Phaser from 'phaser';
-import { COOKIE_RADIUS, SNOWBALL_RADIUS, WORLD_HEIGHT, WORLD_WIDTH } from '../../shared/constants.ts';
+import { CANE_HEIGHT, CANE_WIDTH, COOKIE_RADIUS, SNOWBALL_RADIUS, WORLD_HEIGHT, WORLD_WIDTH } from '../../shared/constants.ts';
 import { gapsOf, hurdleBox } from '../../shared/course.ts';
 import { type GameState, newGame, update } from '../../shared/game.ts';
 import type { Level } from '../../shared/levels/registry.ts';
@@ -19,6 +19,8 @@ export interface PlaySceneOptions {
   /** True while the run should stand still, such as with the phone upright. */
   isPaused: () => boolean;
   onFinish: (gingerbread: number, hearts: number) => void;
+  /** The last heart is gone; the player decides whether to try again. */
+  onGameOver: () => void;
 }
 
 /** Course pictures are drawn in slices this wide, so only nearby ones render. */
@@ -65,13 +67,14 @@ export class PlayScene extends Phaser.Scene {
     addWhiteDogTexture(this);
     this.makeTextures();
     this.cameras.main.setBackgroundColor(art.SKY);
+    this.scale.on('resize', (size: Phaser.Structs.Size) => this.cameras.main.setSize(size.width, size.height));
     this.state = newGame(this.options.level.build(), this.options.level.speed);
 
     this.createBackdrop();
     this.createCourse();
     this.createDog();
     this.snow = new Snow(this);
-    this.hud = new Hud(this, this.options.level.day, this.options.level.name);
+    this.hud = new Hud(this, this.options.level.day, this.options.level.name, this.state.layout.checkpoints.length);
 
     this.input.on('pointerdown', () => {
       this.jumpQueued = true;
@@ -105,6 +108,7 @@ export class PlayScene extends Phaser.Scene {
         this.celebrate();
         this.options.onFinish(this.state.gingerbread, this.state.hearts);
       }
+      if (this.state.events.includes('gameOver')) this.options.onGameOver();
     }
     this.jumpQueued = false;
     this.render(dt);
@@ -128,7 +132,8 @@ export class PlayScene extends Phaser.Scene {
       for (let i = 0; i < count; i++) {
         const g = this.add.graphics();
         art.drawHill(g, near);
-        const container = this.add.container(0, 0, [g]).setScrollFactor(0).setDepth(-100 + depth);
+        // Follows the camera up and down, so the hills stay on the ground when the view shows less sky.
+        const container = this.add.container(0, 0, [g]).setScrollFactor(0, 1).setDepth(-100 + depth);
         this.backdrops.push({ container, baseX: (i * span) / count + offset, depth, span });
       }
     };
@@ -150,6 +155,7 @@ export class PlayScene extends Phaser.Scene {
     }
     for (const [x0, x1] of gapsOf(layout)) art.drawPond(chunkAt(x0), x0, x1);
     for (const x of layout.hurdles) art.drawHurdle(chunkAt(x), hurdleBox(x));
+    for (const x of layout.canes) art.drawCane(chunkAt(x), x, CANE_WIDTH, CANE_HEIGHT);
     for (const t of layout.tables) art.drawTable(chunkAt(t.x0), t);
     for (const a of layout.aframes) art.drawAFrame(chunkAt(a.x0), a);
     art.drawFinish(chunkAt(layout.finishX), layout.finishX);
@@ -184,7 +190,8 @@ export class PlayScene extends Phaser.Scene {
     const { state } = this;
     const camera = this.cameras.main;
     camera.scrollX = leftEdge(state.scroll);
-    camera.scrollY = 0;
+    // A short view shows the bottom of the world: the course, not the sky.
+    camera.scrollY = WORLD_HEIGHT - camera.height;
 
     for (const b of this.backdrops) {
       const x = (((b.baseX - state.scroll * b.depth) % b.span) + b.span) % b.span;
@@ -224,7 +231,8 @@ export class PlayScene extends Phaser.Scene {
     this.dogPicture.setRotation(-this.tilt);
     this.dog.setAlpha(state.grace > 0 && Math.floor(this.elapsed * 8) % 2 === 0 ? 0.35 : 1);
 
-    this.hud.update(state.hearts, state.gingerbread, state.events.includes('heartLost'));
+    const flagsReached = state.checkpointsReached.filter(Boolean).length;
+    this.hud.update(state.hearts, state.gingerbread, flagsReached, state.events.includes('heartLost'));
   }
 
   /** Confetti in Christmas colours falling across the view. */

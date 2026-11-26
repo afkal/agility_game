@@ -50,5 +50,11 @@ export const HURDLE_WIDTH = 16;
 export const HURDLE_HEIGHT = 45;
 export const COOKIE_RADIUS = 18;
 
+/** A standing candy cane: the dog must jump clear of it, and touching it costs a heart. */
+export const CANE_WIDTH = 14;
+export const CANE_HEIGHT = 75;
+/** Cane hits use a slightly narrower box, so brushing past the hook is a miss. */
+export const CANE_HIT_SHRINK = 3;
+
 /** Fixed course speed of door 1, the original level's normal pace. */
 export const DOOR_ONE_SPEED = 200;

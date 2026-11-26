@@ -11,6 +11,18 @@ export interface Player {
   id: string;
   name: string;
   dog: DogId;
+  /** The code that signs this player in on another device. */
+  pin: string;
+}
+
+/** Digits in a player's sign-in code. */
+export const PIN_LENGTH = 6;
+
+/** The code with spaces removed if it looks like a sign-in code, otherwise null. */
+export function cleanPin(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const pin = value.replace(/\s+/g, '');
+  return new RegExp(`^\\d{${PIN_LENGTH}}$`).test(pin) ? pin : null;
 }
 
 export interface LeaderboardEntry {

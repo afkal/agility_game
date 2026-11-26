@@ -71,16 +71,33 @@ describe('hearts and checkpoints', () => {
     expect(state.hearts).toBe(3);
   });
 
-  it('restarts the course after the last heart', () => {
+  it('ends the run after the last heart and waits for the player', () => {
     const state = startRun(flatCourse(50_000, { snowballs: [900], cookies: [atDogHeight(300)] }));
     state.hearts = 1;
-    state.latestCheckpoint = 500;
     runUntilHeartLost(state, 6);
-    expect(state.events).toContain('restart');
+    expect(state.events).toEqual(expect.arrayContaining(['heartLost', 'gameOver']));
+    expect(state.phase).toBe('over');
+    expect(state.hearts).toBe(0);
+    const x = state.dog.body.center.x;
+    runFor(state, 1);
+    expect(state.dog.body.center.x).toBe(x);
+  });
+
+  it('costs a heart for touching a candy cane', () => {
+    const state = startRun(flatCourse(50_000, { canes: [400] }));
+    runUntilHeartLost(state, 4);
+    expect(state.hearts).toBe(2);
+  });
+
+  it('costs nothing for jumping clear over a candy cane', () => {
+    const state = startRun(flatCourse(50_000, { canes: [400] }));
+    // Take off so the dog is at the top of its jump over the cane.
+    const takeOff = 400 - DOG_HALF_SIZE.x - 60;
+    while (state.dog.body.center.x < takeOff) update(state, { jump: false }, FRAME);
+    tap(state);
+    runFor(state, 3);
     expect(state.hearts).toBe(3);
-    expect(state.gingerbread).toBe(0);
-    expect(state.latestCheckpoint).toBeNull();
-    expect(state.dog.body.center.x).toBeLessThan(300);
+    expect(state.dog.body.center.x).toBeGreaterThan(400);
   });
 
   it('brings the snowball back when retrying from a checkpoint', () => {

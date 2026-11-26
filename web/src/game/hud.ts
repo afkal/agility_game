@@ -9,11 +9,22 @@ const FONT = 'FiraSans-Bold, sans-serif';
 export class Hud {
   private readonly hearts: Phaser.GameObjects.Graphics;
   private readonly count: Phaser.GameObjects.Text;
+  private readonly flags: Phaser.GameObjects.Text;
+  private readonly flagTotal: number;
   private shownHearts = -1;
   private pulse = 0;
 
-  constructor(scene: Phaser.Scene, day: number, name: string) {
+  constructor(scene: Phaser.Scene, day: number, name: string, flagTotal: number) {
+    this.flagTotal = flagTotal;
     this.hearts = scene.add.graphics().setScrollFactor(0).setDepth(40);
+    const flag = scene.add.graphics().setScrollFactor(0).setDepth(40);
+    art.drawFlagIcon(flag, WORLD_WIDTH - 330, 44);
+    this.flags = scene.add
+      .text(WORLD_WIDTH - 290, 44, `0/${flagTotal}`, { fontFamily: FONT, fontSize: '36px', color: '#ffffff' })
+      .setOrigin(0, 0.5)
+      .setScrollFactor(0)
+      .setDepth(40)
+      .setShadow(2, 2, '#2c4a70', 4);
     scene.add.image(WORLD_WIDTH - 150, 44, 'cookie').setScrollFactor(0).setDepth(40).setScale(1.2);
     this.count = scene.add
       .text(WORLD_WIDTH - 118, 44, '0', { fontFamily: FONT, fontSize: '36px', color: '#ffffff' })
@@ -29,8 +40,9 @@ export class Hud {
       .setShadow(2, 2, '#2c4a70', 4);
   }
 
-  update(hearts: number, gingerbread: number, heartLost: boolean): void {
+  update(hearts: number, gingerbread: number, flagsReached: number, heartLost: boolean): void {
     this.count.setText(String(gingerbread));
+    this.flags.setText(`${flagsReached}/${this.flagTotal}`);
     if (heartLost) this.pulse = 1;
     if (hearts !== this.shownHearts || this.pulse > 0) {
       this.shownHearts = hearts;

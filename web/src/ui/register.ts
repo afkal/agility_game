@@ -1,41 +1,107 @@
-// The first screen: type your own name and pick a dog.
+// The first screen: sign in with an existing player's code, or create a new
+// player with a name and a dog.
 
-import { DEFAULT_DOG, type DogId, MAX_NAME_LENGTH, cleanName } from '../../shared/profiles.ts';
+import { DEFAULT_DOG, type DogId, MAX_NAME_LENGTH, PIN_LENGTH, cleanName, cleanPin } from '../../shared/profiles.ts';
 import { dogCards } from './dogCards.ts';
-import { el } from '../dom.ts';
+import { button, el } from '../dom.ts';
 
-export function registerScreen(onSubmit: (name: string, dog: DogId) => Promise<void>): HTMLElement {
-  const form = el('form', 'screen register');
-  form.append(el('h1', 'title', 'Agility Camp'), el('p', 'lead', 'Joulukalenteri, jossa uusi agilityrata avautuu joka päivä.'));
+export interface RegisterActions {
+  /** Resolves false when no player has the code. */
+  signIn: (pin: string) => Promise<boolean>;
+  create: (name: string, dog: DogId) => Promise<void>;
+}
 
-  const nameLabel = el('label', 'field-label', 'Kirjoita oma nimesi');
+const CONNECTION_ERROR = 'Yhteys palvelimeen ei onnistunut. Yritä uudelleen.';
+
+export function registerScreen(actions: RegisterActions): HTMLElement {
+  const screen = el('div', 'screen register');
+  screen.append(el('h1', 'title', 'Agility Camp'), el('p', 'lead', 'Joulukalenteri, jossa uusi agilityrata avautuu joka päivä.'));
+
+  // Returning players come first, so they do not create a second player by mistake.
+  const signIn = el('form', 'panel');
+  const pinLabel = el('label', 'field-label', 'Oletko jo pelannut? Kirjoita PIN-koodisi');
+  const pin = pinInput();
+  pinLabel.append(pin);
+  const signInError = el('p', 'form-error');
+  const signInButton = el('button', 'secondary', 'Jatka vanhana pelaajana');
+  signInButton.type = 'submit';
+  signIn.append(pinLabel, signInError, signInButton);
+  signIn.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const code = cleanPin(pin.value);
+    if (!code) {
+      signInError.textContent = `PIN-koodissa on ${PIN_LENGTH} numeroa.`;
+      return;
+    }
+    signInButton.disabled = true;
+    signInError.textContent = '';
+    try {
+      if (!(await actions.signIn(code))) signInError.textContent = 'Tällä PIN-koodilla ei löytynyt pelaajaa.';
+    } catch {
+      signInError.textContent = CONNECTION_ERROR;
+    }
+    signInButton.disabled = false;
+  });
+
+  const create = el('form', 'panel');
+  const nameLabel = el('label', 'field-label', 'Uusi pelaaja? Kirjoita oma nimesi');
   const name = el('input', 'name-input');
   name.maxLength = MAX_NAME_LENGTH;
   name.autocomplete = 'given-name';
   name.enterKeyHint = 'done';
   nameLabel.append(name);
-
   const cards = dogCards(DEFAULT_DOG);
-  const error = el('p', 'form-error');
-  const submit = el('button', 'primary', 'Aloita');
-  submit.type = 'submit';
-  form.append(nameLabel, el('p', 'field-label', 'Valitse koira'), cards.node, error, submit);
-
-  form.addEventListener('submit', async (event) => {
+  const createError = el('p', 'form-error');
+  const createButton = el('button', 'primary', 'Luo uusi pelaaja');
+  createButton.type = 'submit';
+  create.append(nameLabel, el('p', 'field-label', 'Valitse koira'), cards.node, createError, createButton);
+  create.addEventListener('submit', async (event) => {
     event.preventDefault();
     const clean = cleanName(name.value);
     if (!clean) {
-      error.textContent = `Kirjoita nimi (enintään ${MAX_NAME_LENGTH} merkkiä).`;
+      createError.textContent = `Kirjoita nimi (enintään ${MAX_NAME_LENGTH} merkkiä).`;
       return;
     }
-    submit.disabled = true;
-    error.textContent = '';
+    if (!window.confirm(`Luodaanko uusi pelaaja ${clean}?\n\nJos olet jo pelannut toisella laitteella, peruuta ja kirjoita PIN-koodisi, niin tuloksesi pysyvät tallessa.`)) {
+      return;
+    }
+    createButton.disabled = true;
+    createError.textContent = '';
     try {
-      await onSubmit(clean, cards.value());
+      await actions.create(clean, cards.value());
     } catch {
-      error.textContent = 'Yhteys palvelimeen ei onnistunut. Yritä uudelleen.';
-      submit.disabled = false;
+      createError.textContent = CONNECTION_ERROR;
+      createButton.disabled = false;
     }
   });
-  return form;
+
+  screen.append(signIn, create);
+  return screen;
+}
+
+function pinInput(): HTMLInputElement {
+  const input = el('input', 'name-input pin-input');
+  input.inputMode = 'numeric';
+  input.autocomplete = 'one-time-code';
+  input.maxLength = PIN_LENGTH + 2;
+  input.placeholder = '123456';
+  input.enterKeyHint = 'go';
+  return input;
+}
+
+/** Shown once after creating a player: the code to write down. */
+export function welcomeScreen(name: string, pin: string, onContinue: () => void): HTMLElement {
+  const screen = el('div', 'screen');
+  screen.append(
+    el('h1', 'title', `Tervetuloa, ${name}!`),
+    el('p', 'lead', 'Tämä on PIN-koodisi. Kirjoita se muistiin: sillä pääset jatkamaan omilla tuloksillasi toisella puhelimella tai koneella.'),
+    el('p', 'pin-code', formatPin(pin)),
+    el('p', 'lead', 'Näet koodin myöhemmin myös kalenterin kohdasta Oma pelaaja.'),
+    button('primary', 'Selvä, kalenteriin!', onContinue),
+  );
+  return screen;
+}
+
+export function formatPin(pin: string): string {
+  return `${pin.slice(0, 3)} ${pin.slice(3)}`;
 }

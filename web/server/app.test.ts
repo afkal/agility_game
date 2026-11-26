@@ -29,13 +29,41 @@ function setup(date: string, staticRoot?: string) {
 const december = (day: number) => `2026-12-${String(day).padStart(2, '0')}T10:00:00Z`;
 
 describe('players', () => {
-  it('continues the same player when the name is typed again in any case', async () => {
+  it('creates a new player with its own sign-in code even when the name is taken', async () => {
     const { register } = setup(december(3));
     const first = await register('Marjaana');
-    const again = await register(' marjaana ', 'alma');
-    expect(again.id).toBe(first.id);
-    expect(again.name).toBe('Marjaana');
-    expect(again.dog).toBe('alma');
+    const second = await register('Marjaana', 'alma');
+    expect(second.id).not.toBe(first.id);
+    expect(first.pin).toMatch(/^\d{6}$/);
+    expect(second.pin).not.toBe(first.pin);
+  });
+
+  it('signs a player in on another device with their code', async () => {
+    const { call, register } = setup(december(3));
+    const player = await register('Timo', 'laku');
+    expect((await call('POST', '/api/players/sign-in', { pin: ` ${player.pin.slice(0, 3)} ${player.pin.slice(3)} ` })).body).toEqual(player);
+    const wrong = player.pin === '000000' ? '111111' : '000000';
+    expect((await call('POST', '/api/players/sign-in', { pin: wrong })).status).toBe(404);
+    expect((await call('POST', '/api/players/sign-in', { pin: '12ab' })).status).toBe(404);
+  });
+
+  it('stops answering sign-ins from an address after too many wrong codes', async () => {
+    const { call, register } = setup(december(3));
+    const player = await register('Timo');
+    const wrong = player.pin === '000000' ? '111111' : '000000';
+    const from = { 'x-forwarded-for': '10.0.0.9' };
+    for (let i = 0; i < 10; i++) await call('POST', '/api/players/sign-in', { pin: wrong }, from);
+    expect((await call('POST', '/api/players/sign-in', { pin: player.pin }, from)).status).toBe(429);
+    expect((await call('POST', '/api/players/sign-in', { pin: player.pin }, { 'x-forwarded-for': '10.0.0.10' })).status).toBe(200);
+  });
+
+  it('renames a player without changing who they are', async () => {
+    const { call, register } = setup(december(3));
+    const player = await register('Timo');
+    const renamed = await call('PATCH', `/api/players/${player.id}`, { name: '  Timppa ' });
+    expect(renamed.body).toEqual({ ...player, name: 'Timppa' });
+    expect((await call('PATCH', `/api/players/${player.id}`, { name: '' })).status).toBe(400);
+    expect((await call('PATCH', '/api/players/nobody', { name: 'X' })).status).toBe(404);
   });
 
   it('rejects empty, blank and too long names and unknown dogs', async () => {
@@ -52,7 +80,7 @@ describe('players', () => {
     const player = await register('Timo');
     await postRun(player.id, 20, 3);
     const changed = await call('PATCH', `/api/players/${player.id}`, { dog: 'laku' });
-    expect(changed.body).toEqual({ id: player.id, name: 'Timo', dog: 'laku' });
+    expect(changed.body).toEqual({ ...player, dog: 'laku' });
     const calendar = await call('GET', `/api/calendar?player=${player.id}`);
     expect(calendar.body.doors[0].best).toBe(350);
   });
@@ -109,7 +137,7 @@ describe('runs and leaderboards', () => {
     const { call, register } = setup(december(3));
     const player = await register('Timo');
     const res = await call('POST', '/api/runs', { playerId: player.id, day: 1, gingerbread: 23, hearts: 2, score: 99_999 });
-    expect(res.body).toEqual({ saved: true, score: 330, best: 330 });
+    expect(res.body).toEqual({ saved: true, test: false, score: 330, best: 330 });
   });
 
   it('rejects a run for a door that is not open', async () => {
@@ -131,12 +159,18 @@ describe('runs and leaderboards', () => {
     expect((await postRun(player.id, total, 3)).status).toBe(200);
   });
 
-  it('saves nothing in test mode', async () => {
-    const { call, register } = setup(december(3));
+  it('keeps test-mode runs in their own list, apart from real results', async () => {
+    const { call, register, postRun } = setup('2026-11-30T10:00:00Z');
     const player = await register('Timo');
-    const res = await call('POST', '/api/runs', { playerId: player.id, day: 1, gingerbread: 5, hearts: 3 }, { 'x-test-key': TEST_KEY });
-    expect(res.body).toEqual({ saved: false });
+    const test = { 'x-test-key': TEST_KEY };
+    const res = await call('POST', '/api/runs', { playerId: player.id, day: 1, gingerbread: 5, hearts: 3 }, test);
+    expect(res.body).toEqual({ saved: true, test: true, score: 200, best: 200 });
+    expect((await call('GET', '/api/levels/1/leaderboard', undefined, test)).body.entries).toEqual([
+      { name: 'Timo', dog: 'elmo', score: 200 },
+    ]);
+    expect((await call('GET', `/api/calendar?player=${player.id}`, undefined, test)).body.doors[0].best).toBe(200);
     expect((await call('GET', '/api/levels/1/leaderboard')).body.entries).toEqual([]);
+    expect((await postRun(player.id, 5, 3)).status).toBe(400);
   });
 
   it('opens released doors early in test mode only with the right key', async () => {

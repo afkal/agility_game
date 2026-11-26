@@ -11,7 +11,7 @@ import { doorDisplay } from './flow.ts';
 export interface CalendarActions {
   openDoor: (day: number, state: DoorState) => void;
   changeDog: () => void;
-  switchPlayer: () => void;
+  showProfile: () => void;
 }
 
 export function calendarScreen(playerName: string, dog: DogId, calendar: Calendar, actions: CalendarActions): HTMLElement {
@@ -22,7 +22,7 @@ export function calendarScreen(playerName: string, dog: DogId, calendar: Calenda
     el('p', 'who', `${playerName} ja ${dogLook(dog).name}`),
   );
   const tools = el('div', 'calendar-tools');
-  tools.append(button('small', 'Vaihda koira', actions.changeDog), button('small', 'Vaihda pelaaja', actions.switchPlayer));
+  tools.append(button('small', 'Vaihda koira', actions.changeDog), button('small', 'Oma pelaaja', actions.showProfile));
   header.append(tools);
   if (calendar.testMode) header.append(el('p', 'test-badge', 'testitila'));
 

@@ -5,7 +5,26 @@
 // course is cut off until the player pinches out. Sizing the game from the
 // visual viewport keeps it fitting the screen whatever the zoom is.
 
+import { WORLD_HEIGHT, WORLD_WIDTH } from '../../shared/constants.ts';
+
 const SETTLE_DELAYS_MS = [100, 400, 1000];
+
+/**
+ * The least height of world the view keeps, measured up from the bottom. It
+ * still shows the dog at the top of a jump from the highest table.
+ */
+const MIN_VIEW_HEIGHT = 560;
+
+/**
+ * How much of the world's height to show on a screen of this size. The view
+ * always spans the full course width, so on a wide screen the sky at the top
+ * is cut instead of leaving empty bands at the sides.
+ */
+export function viewHeight(screenWidth: number, screenHeight: number): number {
+  if (screenWidth <= 0 || screenHeight <= 0) return WORLD_HEIGHT;
+  const fitted = Math.round((WORLD_WIDTH * screenHeight) / screenWidth);
+  return Math.min(WORLD_HEIGHT, Math.max(MIN_VIEW_HEIGHT, fitted));
+}
 
 /**
  * Size `root` to the visible area and call `onResize` whenever that changes,

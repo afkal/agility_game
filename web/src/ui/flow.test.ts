@@ -18,11 +18,11 @@ describe('screen flow', () => {
 });
 
 describe('saving a finished run', () => {
-  it('sends nothing in test mode', async () => {
-    const posted: RunPost[] = [];
-    const save = resultSaver({ postRun: async (r) => (posted.push(r), { saved: true }) }, 'p1', true);
-    expect(await save(run)).toBe('not-saved');
-    expect(posted).toEqual([]);
+  it('tells a test-mode save apart from a real one', async () => {
+    const test = resultSaver({ postRun: async () => ({ saved: true, test: true }) }, 'p1');
+    expect(await test(run)).toBe('saved-test');
+    const real = resultSaver({ postRun: async () => ({ saved: true, test: false }) }, 'p1');
+    expect(await real(run)).toBe('saved');
   });
 
   it('reports a failed post and sends the same run again on retry', async () => {
@@ -37,7 +37,6 @@ describe('saving a finished run', () => {
         },
       },
       'p1',
-      false,
     );
     expect(await save(run)).toBe('failed');
     fail = false;

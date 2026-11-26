@@ -2,10 +2,10 @@
 
 import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
-import { DOOR_COUNT, doorStates, helsinkiDate, seasonOf } from '../shared/calendar.ts';
+import { type CalendarDate, DOOR_COUNT, FIRST_SEASON, doorStates, helsinkiDate, seasonOf } from '../shared/calendar.ts';
 import { STARTING_HEARTS } from '../shared/constants.ts';
 import { LEVELS, cookieCount, levelForDay } from '../shared/levels/registry.ts';
-import { cleanName, isDogId } from '../shared/profiles.ts';
+import { cleanName, cleanPin, isDogId } from '../shared/profiles.ts';
 import { score } from '../shared/score.ts';
 import type { Store } from './db.ts';
 
@@ -21,17 +21,44 @@ export interface AppOptions {
 
 const released = new Set(LEVELS.map((level) => level.day));
 
+/** Wrong sign-in codes allowed from one address before it has to wait. */
+const MAX_FAILED_SIGN_INS = 10;
+const SIGN_IN_WINDOW_MS = 15 * 60 * 1000;
+
 export function createApp(options: AppOptions): Hono {
   const { store } = options;
   const now = options.now ?? (() => new Date());
   const isTest = (key: string | undefined) => Boolean(options.testKey) && key === options.testKey;
   const app = new Hono();
 
+  // Registering always creates a new player; the same name may belong to
+  // several players. The returned code signs the player in elsewhere.
   app.post('/api/players', async (c) => {
     const body = await c.req.json().catch(() => null);
     const name = cleanName(body?.name);
     if (!name || !isDogId(body?.dog)) return c.json({ error: 'invalid-player' }, 400);
-    return c.json(store.registerPlayer(name, body.dog));
+    return c.json(store.createPlayer(name, body.dog));
+  });
+
+  const failedSignIns = new Map<string, { count: number; since: number }>();
+  app.post('/api/players/sign-in', async (c) => {
+    // The reverse proxy appends the real address last; earlier entries come from the caller.
+    const address = c.req.header('x-forwarded-for')?.split(',').at(-1)?.trim() || clientAddress(c.env) || 'unknown';
+    const time = now().getTime();
+    const failures = failedSignIns.get(address);
+    if (failures && time - failures.since > SIGN_IN_WINDOW_MS) failedSignIns.delete(address);
+    if ((failedSignIns.get(address)?.count ?? 0) >= MAX_FAILED_SIGN_INS) return c.json({ error: 'too-many-tries' }, 429);
+
+    const body = await c.req.json().catch(() => null);
+    const pin = cleanPin(body?.pin);
+    const player = pin ? store.playerByPin(pin) : undefined;
+    if (!player) {
+      const entry = failedSignIns.get(address) ?? { count: 0, since: time };
+      entry.count += 1;
+      failedSignIns.set(address, entry);
+      return c.json({ error: 'unknown-pin' }, 404);
+    }
+    return c.json(player);
   });
 
   app.get('/api/players/:id', (c) => {
@@ -41,18 +68,23 @@ export function createApp(options: AppOptions): Hono {
 
   app.patch('/api/players/:id', async (c) => {
     const body = await c.req.json().catch(() => null);
-    if (!isDogId(body?.dog)) return c.json({ error: 'invalid-dog' }, 400);
+    const dog = body?.dog === undefined ? undefined : body.dog;
+    const name = body?.name === undefined ? undefined : cleanName(body.name);
+    if ((dog !== undefined && !isDogId(dog)) || name === null || (dog === undefined && name === undefined)) {
+      return c.json({ error: 'invalid-player' }, 400);
+    }
     const id = c.req.param('id');
-    if (!store.setDog(id, body.dog)) return c.json({ error: 'not-found' }, 404);
+    if (!store.getPlayer(id)) return c.json({ error: 'not-found' }, 404);
+    store.updatePlayer(id, { dog, name });
     return c.json(store.getPlayer(id));
   });
 
   app.get('/api/calendar', (c) => {
     const today = helsinkiDate(now());
-    const season = seasonOf(today);
     const testMode = isTest(c.req.header('x-test-key'));
+    const season = seasonFor(today, testMode);
     const playerId = c.req.query('player');
-    const best = playerId && season !== null ? store.bestScores(playerId, season) : new Map<number, number>();
+    const best = playerId && season !== null ? store.bestScores(playerId, season, testMode) : new Map<number, number>();
     const doors = doorStates(today, released, testMode).map((state, i) => ({
       day: i + 1,
       state,
@@ -64,13 +96,14 @@ export function createApp(options: AppOptions): Hono {
   app.get('/api/levels/:day/leaderboard', (c) => {
     const day = Number(c.req.param('day'));
     if (!Number.isInteger(day) || day < 1 || day > DOOR_COUNT) return c.json({ error: 'invalid-day' }, 400);
-    const season = seasonOf(helsinkiDate(now()));
-    return c.json({ day, entries: season === null ? [] : store.leaderboard(season, day) });
+    const testMode = isTest(c.req.header('x-test-key'));
+    const season = seasonFor(helsinkiDate(now()), testMode);
+    return c.json({ day, entries: season === null ? [] : store.leaderboard(season, day, testMode) });
   });
 
   app.post('/api/runs', async (c) => {
     const body = await c.req.json().catch(() => null);
-    if (isTest(c.req.header('x-test-key'))) return c.json({ saved: false });
+    const testMode = isTest(c.req.header('x-test-key'));
 
     const player = typeof body?.playerId === 'string' ? store.getPlayer(body.playerId) : undefined;
     if (!player) return c.json({ error: 'unknown-player' }, 400);
@@ -78,8 +111,8 @@ export function createApp(options: AppOptions): Hono {
     const day = Number(body?.day);
     const level = levelForDay(day);
     const today = helsinkiDate(now());
-    const season = seasonOf(today);
-    if (!level || season === null || doorStates(today, released)[day - 1] !== 'open') {
+    const season = seasonFor(today, testMode);
+    if (!level || season === null || doorStates(today, released, testMode)[day - 1] !== 'open') {
       return c.json({ error: 'door-not-open' }, 400);
     }
 
@@ -89,8 +122,9 @@ export function createApp(options: AppOptions): Hono {
     if (!validCookies || !validHearts) return c.json({ error: 'invalid-run' }, 400);
 
     const points = score(gingerbread, hearts);
-    store.addRun({ playerId: player.id, season, day, gingerbread, hearts, score: points });
-    return c.json({ saved: true, score: points, best: store.bestScores(player.id, season).get(day) ?? points });
+    store.addRun({ playerId: player.id, season, day, gingerbread, hearts, score: points, test: testMode });
+    const best = store.bestScores(player.id, season, testMode).get(day) ?? points;
+    return c.json({ saved: true, test: testMode, score: points, best });
   });
 
   app.all('/api/*', (c) => c.json({ error: 'not-found' }, 404));
@@ -114,4 +148,14 @@ export function createApp(options: AppOptions): Hono {
   }
 
   return app;
+}
+
+/** The season results belong to. Test runs before the first December count towards the first season. */
+function seasonFor(today: CalendarDate, testMode: boolean): number | null {
+  return seasonOf(today) ?? (testMode ? FIRST_SEASON : null);
+}
+
+/** The caller's address when the server runs on Node without a proxy in front. */
+function clientAddress(env: unknown): string | undefined {
+  return (env as { incoming?: { socket?: { remoteAddress?: string } } } | undefined)?.incoming?.socket?.remoteAddress;
 }

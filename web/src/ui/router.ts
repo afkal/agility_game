@@ -8,7 +8,8 @@ import { dogCards } from './dogCards.ts';
 import { doorCard } from './doorCard.ts';
 import { button, el } from '../dom.ts';
 import { firstScreen, resultSaver } from './flow.ts';
-import { registerScreen } from './register.ts';
+import { formatPin, registerScreen, welcomeScreen } from './register.ts';
+import { MAX_NAME_LENGTH, cleanName } from '../../shared/profiles.ts';
 
 const PLAYER_STORAGE = 'agility-camp.player';
 
@@ -71,12 +72,66 @@ export class App {
 
   private showRegister(): void {
     this.show(
-      registerScreen(async (name, dog) => {
-        this.player = await this.api.register(name, dog);
-        storePlayerId(this.player.id);
-        await this.showCalendar();
+      registerScreen({
+        signIn: async (pin) => {
+          const player = await this.api.signIn(pin);
+          if (!player) return false;
+          this.player = player;
+          storePlayerId(player.id);
+          await this.showCalendar();
+          return true;
+        },
+        create: async (name, dog) => {
+          const player = await this.api.register(name, dog);
+          this.player = player;
+          storePlayerId(player.id);
+          this.show(welcomeScreen(player.name, player.pin, () => void this.showCalendar()));
+        },
       }),
     );
+  }
+
+  /** The player's own page: their sign-in code, a new name, or leaving this device. */
+  private showProfile(): void {
+    const player = this.player!;
+    const screen = el('div', 'screen');
+    const nameLabel = el('label', 'field-label', 'Nimi tuloslistoilla');
+    const name = el('input', 'name-input');
+    name.maxLength = MAX_NAME_LENGTH;
+    name.value = player.name;
+    nameLabel.append(name);
+    const message = el('p', 'form-error');
+    screen.append(
+      el('h1', 'title', 'Oma pelaaja'),
+      el('p', 'lead', 'PIN-koodisi. Sillä pääset jatkamaan omilla tuloksillasi toisella laitteella.'),
+      el('p', 'pin-code', formatPin(player.pin)),
+      nameLabel,
+      message,
+      button('primary', 'Tallenna nimi', async () => {
+        const clean = cleanName(name.value);
+        if (!clean) {
+          message.textContent = `Kirjoita nimi (enintään ${MAX_NAME_LENGTH} merkkiä).`;
+          return;
+        }
+        try {
+          this.player = await this.api.updatePlayer(player.id, { name: clean });
+          await this.showCalendar();
+        } catch {
+          message.textContent = 'Yhteys palvelimeen ei onnistunut. Yritä uudelleen.';
+        }
+      }),
+      button('secondary', 'Takaisin kalenteriin', () => void this.showCalendar()),
+      button('link-button', 'Kirjaudu ulos tältä laitteelta', () => {
+        const ok = window.confirm(
+          `Kirjaudutaanko ulos? Pääset takaisin pelaajaksi ${player.name} vain PIN-koodilla ${formatPin(player.pin)}. Kirjoita se muistiin ennen kuin jatkat.`,
+        );
+        if (!ok) return;
+        storePlayerId(null);
+        this.player = null;
+        this.showRegister();
+      }),
+    );
+    this.show(screen);
   }
 
   private showDogChoice(): void {
@@ -90,7 +145,7 @@ export class App {
       error,
       button('primary', 'Valmis', async () => {
         try {
-          this.player = await this.api.setDog(player.id, cards.value());
+          this.player = await this.api.updatePlayer(player.id, { dog: cards.value() });
           await this.showCalendar();
         } catch {
           error.textContent = 'Yhteys palvelimeen ei onnistunut. Yritä uudelleen.';
@@ -113,11 +168,7 @@ export class App {
       calendarScreen(player.name, player.dog, this.calendar, {
         openDoor: (day, state) => void this.openDoor(day, state),
         changeDog: () => this.showDogChoice(),
-        switchPlayer: () => {
-          storePlayerId(null);
-          this.player = null;
-          this.showRegister();
-        },
+        showProfile: () => this.showProfile(),
       }),
     );
   }
@@ -151,7 +202,7 @@ export class App {
       startGame(host, {
         level,
         dogId: player.dog,
-        saveResult: resultSaver(this.api, player.id, Boolean(this.calendar?.testMode)),
+        saveResult: resultSaver(this.api, player.id),
         onExit: () => void this.showCalendar(),
       });
     } catch {

@@ -75,6 +75,39 @@ export function drawHurdle(g: G, b: Aabb): void {
   for (const dx of [-9, 9]) g.fillEllipse(cx + dx, sy(b.max.y - 8), 16, 10);
 }
 
+/**
+ * A standing candy cane with its hook, thicker and taller than a hurdle, so it
+ * reads as something to keep clear of.
+ */
+export function drawCane(g: G, x: number, width: number, height: number): void {
+  const hookRadius = width;
+  const stemTop = GROUND_TOP + height - hookRadius;
+  const stripes = 6;
+  const h = (stemTop - GROUND_TOP) / stripes;
+  for (let i = 0; i < stripes; i++) {
+    rect(g, candyStripe(i), x, GROUND_TOP + h * i, x + width, GROUND_TOP + h * (i + 1));
+  }
+  // The hook bends forward over the top in alternating stripes.
+  const cx = x + width / 2 + hookRadius;
+  const cy = sy(stemTop);
+  const segments = 4;
+  for (let i = 0; i < segments; i++) {
+    g.lineStyle(width, candyStripe(i + stripes), 1);
+    g.beginPath();
+    g.arc(cx, cy, hookRadius, Math.PI + (i * Math.PI) / segments, Math.PI + ((i + 1) * Math.PI) / segments);
+    g.strokePath();
+  }
+  g.lineStyle(0, 0, 0);
+}
+
+/** A small flag for the progress count in the corner of the view. */
+export function drawFlagIcon(g: G, x: number, y: number): void {
+  g.fillStyle(TRUNK, 1);
+  g.fillRect(x - 2, y - 20, 4, 40);
+  g.fillStyle(GOLD, 1);
+  g.fillTriangle(x + 2, y - 20, x + 2, y, x + 30, y - 10);
+}
+
 /** Agility tables are giant Christmas presents with snow on top. */
 export function drawTable(g: G, t: Table): void {
   const cx = (t.x0 + t.x1) / 2;

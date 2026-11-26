@@ -28,11 +28,13 @@ export interface RunPost {
 
 export interface Api {
   register(name: string, dog: DogId): Promise<Player>;
+  /** The player with this sign-in code, or null if there is none. */
+  signIn(pin: string): Promise<Player | null>;
   getPlayer(id: string): Promise<Player | null>;
-  setDog(id: string, dog: DogId): Promise<Player>;
+  updatePlayer(id: string, changes: { dog?: DogId; name?: string }): Promise<Player>;
   calendar(playerId: string): Promise<Calendar>;
   leaderboard(day: number): Promise<LeaderboardEntry[]>;
-  postRun(run: RunPost): Promise<{ saved: boolean }>;
+  postRun(run: RunPost): Promise<{ saved: boolean; test?: boolean }>;
 }
 
 const TEST_KEY_STORAGE = 'agility-camp.test-key';
@@ -55,6 +57,15 @@ function testKey(): string | null {
   }
 }
 
+export class HttpError extends Error {
+  readonly status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+  }
+}
+
 async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
   const headers: Record<string, string> = { 'content-type': 'application/json' };
   const key = testKey();
@@ -65,7 +76,7 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
     body: body === undefined ? undefined : JSON.stringify(body),
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
-  if (!res.ok) throw new Error(`${method} ${path} failed with ${res.status}`);
+  if (!res.ok) throw new HttpError(res.status, `${method} ${path} failed with ${res.status}`);
   return (await res.json()) as T;
 }
 
@@ -77,7 +88,15 @@ export const api: Api = {
     if (!res.ok) throw new Error(`GET player failed with ${res.status}`);
     return (await res.json()) as Player;
   },
-  setDog: (id, dog) => call('PATCH', `/api/players/${encodeURIComponent(id)}`, { dog }),
+  async signIn(pin) {
+    try {
+      return await call<Player>('POST', '/api/players/sign-in', { pin });
+    } catch (error) {
+      if (error instanceof HttpError && error.status === 404) return null;
+      throw error;
+    }
+  },
+  updatePlayer: (id, changes) => call('PATCH', `/api/players/${encodeURIComponent(id)}`, changes),
   calendar: (playerId) => call('GET', `/api/calendar?player=${encodeURIComponent(playerId)}`),
   leaderboard: async (day) => (await call<{ entries: LeaderboardEntry[] }>('GET', `/api/levels/${day}/leaderboard`)).entries,
   postRun: (run) => call('POST', '/api/runs', run),

@@ -2,7 +2,8 @@ import { Builder, type CourseLayout } from '../course.ts';
 
 /**
  * Door 1, the original Christmas course: an easy start, then hurdles, tables,
- * gaps, the A-frame and snowballs, mixed more and more towards the finish.
+ * gaps, the A-frame and snowballs, with candy canes that must not be touched
+ * from the middle on, mixed more and more towards the finish.
  */
 export function christmasCourse(): CourseLayout {
   const b = new Builder();
@@ -37,11 +38,11 @@ export function christmasCourse(): CourseLayout {
   b.aframe();
   b.flat(500, true);
   b.checkpoint();
-  // Mixing it up.
+  // Mixing it up, and the first candy cane.
   b.gap(110);
   b.flat(400, true);
   b.table(400, 90);
-  b.flat(300, false);
+  b.cane();
   b.hurdle();
   b.flat(500, true);
   b.snowball();
@@ -56,7 +57,7 @@ export function christmasCourse(): CourseLayout {
   b.flat(400, true);
   b.checkpoint();
   b.aframe();
-  b.flat(300, false);
+  b.cane();
   b.gap(120);
   b.flat(400, true);
   b.snowball();
@@ -69,9 +70,9 @@ export function christmasCourse(): CourseLayout {
   b.gap(130);
   b.flat(400, true);
   b.stairs(90, 170);
-  b.flat(300, false);
+  b.cane();
   b.hurdle();
-  b.flat(300, false);
+  b.cane();
   b.hurdle();
   b.flat(400, true);
   b.snowball();

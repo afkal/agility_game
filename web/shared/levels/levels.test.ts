@@ -2,7 +2,7 @@
 // fixed speed.
 
 import { describe, expect, it } from 'vitest';
-import { COOKIE_RADIUS, DOG_HALF_SIZE, GRAVITY, GROUND_TOP, HURDLE_HEIGHT, HURDLE_WIDTH, JUMP_VELOCITY } from '../constants.ts';
+import { CANE_HEIGHT, CANE_WIDTH, COOKIE_RADIUS, DOG_HALF_SIZE, GRAVITY, GROUND_TOP, HURDLE_HEIGHT, HURDLE_WIDTH, JUMP_VELOCITY } from '../constants.ts';
 import { gapsOf, solidsOf, surfaceAt } from '../course.ts';
 import { aabbFromCenter, overlaps } from '../physics.ts';
 import { LEVELS } from './registry.ts';
@@ -34,6 +34,17 @@ describe.each(LEVELS.map((level) => [level.day, level] as const))('door %i', (_d
   it('has hurdles the dog can clear', () => {
     const needed = HURDLE_WIDTH + 2 * DOG_HALF_SIZE.x + MARGIN;
     expect(level.speed * timeAbove(HURDLE_HEIGHT)).toBeGreaterThanOrEqual(needed);
+  });
+
+  it('has candy canes on flat ground that a jump clears', () => {
+    const clearDistance = timeAbove(CANE_HEIGHT + MARGIN) * level.speed;
+    for (const x of layout.canes) {
+      expect(clearDistance, `cane at ${x}`).toBeGreaterThan(2 * DOG_HALF_SIZE.x + CANE_WIDTH + MARGIN);
+      for (const probe of [x - 150, x, x + CANE_WIDTH + 150]) {
+        expect(surfaceAt(layout, probe), `cane at ${x}`).toBe(GROUND_TOP);
+      }
+    }
+    expect(layout.canes.length).toBeGreaterThan(0);
   });
 
   it('has every step up lower than a jump', () => {
@@ -70,6 +81,7 @@ describe.each(LEVELS.map((level) => [level.day, level] as const))('door %i', (_d
   it('ends after every obstacle and takes two to three minutes', () => {
     const lastObstacle = Math.max(
       ...layout.hurdles,
+      ...layout.canes,
       ...layout.tables.map((t) => t.x1),
       ...layout.aframes.map((a) => a.x0 + 2 * a.halfWidth),
       ...gapsOf(layout).map((g) => g[1]),

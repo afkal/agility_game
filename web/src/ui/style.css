@@ -295,3 +295,37 @@ input {
 .leaderboard-score {
   color: var(--red);
 }
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.pin-input {
+  letter-spacing: 0.2em;
+  text-align: center;
+}
+
+.pin-code {
+  margin: 4px auto;
+  padding: 10px 24px;
+  border-radius: 16px;
+  background: #fff;
+  font-size: clamp(36px, 10vw, 52px);
+  letter-spacing: 0.12em;
+  text-align: center;
+}
+
+.link-button {
+  align-self: center;
+  border: 0;
+  background: none;
+  color: var(--night);
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 8px;
+}

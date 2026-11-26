@@ -19,10 +19,9 @@ export function doorDisplay(state: DoorState, hasLevel: boolean): DoorState {
   return state === 'open' && !hasLevel ? 'coming-soon' : state;
 }
 
-/** Saves a finished run for the player; in test mode nothing is sent. */
-export function resultSaver(api: Pick<Api, 'postRun'>, playerId: string, testMode: boolean) {
+/** Saves a finished run for the player. In test mode the server keeps it on the test list. */
+export function resultSaver(api: Pick<Api, 'postRun'>, playerId: string) {
   return async (result: RunResult): Promise<SaveOutcome> => {
-    if (testMode) return 'not-saved';
     try {
       const res = await api.postRun({
         playerId,
@@ -30,7 +29,8 @@ export function resultSaver(api: Pick<Api, 'postRun'>, playerId: string, testMod
         gingerbread: result.gingerbread,
         hearts: result.hearts,
       });
-      return res.saved ? 'saved' : 'not-saved';
+      if (!res.saved) return 'failed';
+      return res.test ? 'saved-test' : 'saved';
     } catch {
       return 'failed';
     }

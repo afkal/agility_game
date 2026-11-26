@@ -4,7 +4,8 @@
   "lang": "fi",
   "start_url": "/",
   "scope": "/",
-  "display": "standalone",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
   "background_color": "#73adeb",
   "theme_color": "#73adeb",
   "icons": [
