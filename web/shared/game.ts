@@ -108,6 +108,7 @@ export function update(state: GameState, input: GameInput, rawDt: number): void 
 }
 
 function spawnDueSnowballs(state: GameState): void {
+  if (state.pendingSnowballs.length === 0) return;
   const due = rightEdge(state.scroll) + SNOWBALL_RADIUS * 2;
   state.pendingSnowballs = state.pendingSnowballs.filter((x) => {
     if (x > due) return true;

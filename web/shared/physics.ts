@@ -96,7 +96,6 @@ export function step(body: Body, solids: readonly Solid[], gravity: number, dt: 
   const outcome: StepOutcome = { blocked: false, groundAngle: null };
   const wasGrounded = body.grounded;
 
-  // Horizontal.
   const dx = body.velocity.x * dt;
   if (dx !== 0) {
     const current = bodyBox(body);
@@ -128,12 +127,10 @@ export function step(body: Body, solids: readonly Solid[], gravity: number, dt: 
     }
   }
 
-  // Vertical.
   body.velocity.y -= gravity * dt;
   const current = bodyBox(body);
   const dy = body.velocity.y * dt;
   const newBottom = current.min.y + dy;
-  // Highest surface landed on, with its slope angle.
   let landedOn: { height: number; angle: number } | null = null;
   let ceiling: number | null = null;
   const consider = (height: number, angle: number) => {

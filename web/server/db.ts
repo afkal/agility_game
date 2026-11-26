@@ -3,18 +3,7 @@
 
 import { randomUUID } from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
-
-export interface Player {
-  id: string;
-  name: string;
-  dog: string;
-}
-
-export interface LeaderboardEntry {
-  name: string;
-  dog: string;
-  score: number;
-}
+import type { DogId, LeaderboardEntry, Player } from '../shared/profiles.ts';
 
 export interface RunRecord {
   playerId: string;
@@ -59,7 +48,7 @@ export class Store {
   }
 
   /** The player with this name, created with `dog` if new; an existing player switches to `dog`. */
-  registerPlayer(name: string, dog: string): Player {
+  registerPlayer(name: string, dog: DogId): Player {
     const key = nameKey(name);
     const existing = this.db.prepare('SELECT id, name FROM players WHERE name_key = ?').get(key) as
       | { id: string; name: string }
@@ -78,7 +67,7 @@ export class Store {
     return this.db.prepare('SELECT id, name, dog FROM players WHERE id = ?').get(id) as Player | undefined;
   }
 
-  setDog(id: string, dog: string): boolean {
+  setDog(id: string, dog: DogId): boolean {
     return this.db.prepare('UPDATE players SET dog = ? WHERE id = ?').run(dog, id).changes > 0;
   }
 

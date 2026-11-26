@@ -3,7 +3,21 @@
 export const DOG_IDS = ['elmo', 'laku', 'alma'] as const;
 export type DogId = (typeof DOG_IDS)[number];
 
+export const DEFAULT_DOG: DogId = 'elmo';
+
 export const MAX_NAME_LENGTH = 20;
+
+export interface Player {
+  id: string;
+  name: string;
+  dog: DogId;
+}
+
+export interface LeaderboardEntry {
+  name: string;
+  dog: DogId;
+  score: number;
+}
 
 export function isDogId(value: unknown): value is DogId {
   return typeof value === 'string' && (DOG_IDS as readonly string[]).includes(value);

@@ -38,7 +38,6 @@ export class Hud {
       this.hearts.clear();
       for (let i = 0; i < STARTING_HEARTS; i++) {
         const full = i < hearts;
-        // The heart just lost flashes before it fades to an outline colour.
         const color = full ? art.HEART_RED : this.pulse > 0 && i === hearts ? art.GOLD : 0xffffff;
         art.drawHeart(this.hearts, 40, color, full ? 1 : 0.45, 120 + i * 50, 46);
       }

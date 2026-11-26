@@ -106,7 +106,6 @@ export function drawPine(g: G, x: number, baseY: number, height: number): void {
     const y0 = baseY + height * (0.15 + i * 0.22);
     const half = w * scale;
     triangle(g, DARK_PINE, x - half, y0, x + half, y0, x, y0 + height * 0.42);
-    // A little snow on each tier.
     triangle(g, SNOW_WHITE, x - half * 0.35, y0 + height * 0.28, x + half * 0.35, y0 + height * 0.28, x, y0 + height * 0.42);
   });
 }

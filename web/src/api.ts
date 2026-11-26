@@ -2,12 +2,9 @@
 // (`?testi=<key>`) is kept for the browser session and sent with every call.
 
 import type { CalendarDate, DoorState } from '../shared/calendar.ts';
+import type { DogId, LeaderboardEntry, Player } from '../shared/profiles.ts';
 
-export interface Player {
-  id: string;
-  name: string;
-  dog: string;
-}
+export type { LeaderboardEntry, Player };
 
 export interface CalendarDoor {
   day: number;
@@ -22,12 +19,6 @@ export interface Calendar {
   doors: CalendarDoor[];
 }
 
-export interface LeaderboardEntry {
-  name: string;
-  dog: string;
-  score: number;
-}
-
 export interface RunPost {
   playerId: string;
   day: number;
@@ -36,9 +27,9 @@ export interface RunPost {
 }
 
 export interface Api {
-  register(name: string, dog: string): Promise<Player>;
+  register(name: string, dog: DogId): Promise<Player>;
   getPlayer(id: string): Promise<Player | null>;
-  setDog(id: string, dog: string): Promise<Player>;
+  setDog(id: string, dog: DogId): Promise<Player>;
   calendar(playerId: string): Promise<Calendar>;
   leaderboard(day: number): Promise<LeaderboardEntry[]>;
   postRun(run: RunPost): Promise<{ saved: boolean }>;

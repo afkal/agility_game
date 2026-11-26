@@ -2,8 +2,9 @@
 
 import type { Calendar } from '../api.ts';
 import { levelForDay } from '../../shared/levels/registry.ts';
+import type { DogId } from '../../shared/profiles.ts';
 import { dogLook } from '../game/dogs.ts';
-import { button, el } from './dom.ts';
+import { button, el } from '../dom.ts';
 import { doorDisplay } from './flow.ts';
 
 export interface CalendarActions {
@@ -12,7 +13,7 @@ export interface CalendarActions {
   switchPlayer: () => void;
 }
 
-export function calendarScreen(playerName: string, dog: string, calendar: Calendar, actions: CalendarActions): HTMLElement {
+export function calendarScreen(playerName: string, dog: DogId, calendar: Calendar, actions: CalendarActions): HTMLElement {
   const screen = el('div', 'screen calendar');
   const header = el('header', 'calendar-header');
   header.append(

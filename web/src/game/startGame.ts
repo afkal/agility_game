@@ -4,7 +4,9 @@
 import Phaser from 'phaser';
 import { WORLD_HEIGHT, WORLD_WIDTH } from '../../shared/constants.ts';
 import type { Level } from '../../shared/levels/registry.ts';
+import type { DogId } from '../../shared/profiles.ts';
 import { score } from '../../shared/score.ts';
+import { el } from '../dom.ts';
 import { dogLook } from './dogs.ts';
 import { PlayScene } from './PlayScene.ts';
 import './game.css';
@@ -21,7 +23,7 @@ export type SaveOutcome = 'saved' | 'failed' | 'not-saved';
 
 export interface StartGameOptions {
   level: Level;
-  dogId: string;
+  dogId: DogId;
   /** Called when the dog reaches the finish; resolves when saving is done. */
   saveResult: (result: RunResult) => Promise<SaveOutcome>;
   /** Called when the player leaves for the calendar. */
@@ -36,13 +38,6 @@ export interface GameHandle {
 const CELEBRATION_MIN_MS = 1000;
 
 const portrait = window.matchMedia('(orientation: portrait) and (pointer: coarse)');
-
-function el<K extends keyof HTMLElementTagNameMap>(tag: K, className: string, text?: string): HTMLElementTagNameMap[K] {
-  const node = document.createElement(tag);
-  node.className = className;
-  if (text !== undefined) node.textContent = text;
-  return node;
-}
 
 export function startGame(host: HTMLElement, options: StartGameOptions): GameHandle {
   const root = el('div', 'game-root');

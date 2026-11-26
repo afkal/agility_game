@@ -3,7 +3,7 @@
 import type { LeaderboardEntry } from '../api.ts';
 import type { Level } from '../../shared/levels/registry.ts';
 import { dogLook } from '../game/dogs.ts';
-import { button, el } from './dom.ts';
+import { button, el } from '../dom.ts';
 
 export function doorCard(
   day: number,

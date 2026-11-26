@@ -5,7 +5,7 @@ import { Hono } from 'hono';
 import { DOOR_COUNT, doorStates, helsinkiDate, seasonOf } from '../shared/calendar.ts';
 import { STARTING_HEARTS } from '../shared/constants.ts';
 import { LEVELS, cookieCount, levelForDay } from '../shared/levels/registry.ts';
-import { cleanName, isDogId } from '../shared/players.ts';
+import { cleanName, isDogId } from '../shared/profiles.ts';
 import { score } from '../shared/score.ts';
 import type { Store } from './db.ts';
 
@@ -63,8 +63,8 @@ export function createApp(options: AppOptions): Hono {
 
   app.get('/api/levels/:day/leaderboard', (c) => {
     const day = Number(c.req.param('day'));
-    const season = seasonOf(helsinkiDate(now()));
     if (!Number.isInteger(day) || day < 1 || day > DOOR_COUNT) return c.json({ error: 'invalid-day' }, 400);
+    const season = seasonOf(helsinkiDate(now()));
     return c.json({ day, entries: season === null ? [] : store.leaderboard(season, day) });
   });
 
@@ -85,7 +85,6 @@ export function createApp(options: AppOptions): Hono {
 
     const { gingerbread, hearts } = body;
     const validCookies = Number.isInteger(gingerbread) && gingerbread >= 0 && gingerbread <= cookieCount(level);
-    // A finished run always has at least one heart left.
     const validHearts = Number.isInteger(hearts) && hearts >= 1 && hearts <= STARTING_HEARTS;
     if (!validCookies || !validHearts) return c.json({ error: 'invalid-run' }, 400);
 

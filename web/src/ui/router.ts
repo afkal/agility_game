@@ -5,7 +5,7 @@ import { levelForDay } from '../../shared/levels/registry.ts';
 import { calendarScreen } from './calendar.ts';
 import { dogCards } from './dogCards.ts';
 import { doorCard } from './doorCard.ts';
-import { button, el } from './dom.ts';
+import { button, el } from '../dom.ts';
 import { firstScreen, resultSaver } from './flow.ts';
 import { registerScreen } from './register.ts';
 
@@ -41,7 +41,7 @@ export class App {
 
   async start(): Promise<void> {
     const id = storedPlayerId();
-    if (firstScreen(id) === 'calendar' && id) {
+    if (id !== null && firstScreen(id) === 'calendar') {
       try {
         this.player = await this.api.getPlayer(id);
       } catch {
@@ -140,7 +140,6 @@ export class App {
     if (!level || !player) return;
     const host = el('div', 'lead', 'Ladataan…');
     this.show(host);
-    // The game engine is large, so it loads only when a level starts.
     const { startGame } = await import('../game/startGame.ts');
     startGame(host, {
       level,

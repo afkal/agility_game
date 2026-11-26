@@ -5,11 +5,11 @@ import { WORLD_HEIGHT, WORLD_WIDTH } from '../../shared/constants.ts';
 
 const FLAKE_COUNT = 140;
 
+/** Radius of the flake texture; smaller flakes scale it down. */
+const FLAKE_TEXTURE_RADIUS = 4.5;
+
 interface Flake {
-  x: number;
-  y: number;
-  size: number;
-  alpha: number;
+  image: Phaser.GameObjects.Image;
   fallSpeed: number;
   sway: number;
   phase: number;
@@ -18,19 +18,26 @@ interface Flake {
 const random = (min: number, max: number) => min + Math.random() * (max - min);
 
 export class Snow {
-  private readonly graphics: Phaser.GameObjects.Graphics;
   private readonly flakes: Flake[];
 
   constructor(scene: Phaser.Scene) {
-    this.graphics = scene.add.graphics().setScrollFactor(0).setDepth(30);
+    if (!scene.textures.exists('flake')) {
+      const g = scene.make.graphics({}, false);
+      g.fillStyle(0xffffff, 1);
+      g.fillCircle(FLAKE_TEXTURE_RADIUS, FLAKE_TEXTURE_RADIUS, FLAKE_TEXTURE_RADIUS);
+      g.generateTexture('flake', FLAKE_TEXTURE_RADIUS * 2, FLAKE_TEXTURE_RADIUS * 2);
+      g.destroy();
+    }
     this.flakes = Array.from({ length: FLAKE_COUNT }, () => {
-      const size = random(1.5, 4.5);
+      const size = random(1.5, FLAKE_TEXTURE_RADIUS);
+      const image = scene.add
+        .image(random(0, WORLD_WIDTH), random(0, WORLD_HEIGHT), 'flake')
+        .setScale(size / FLAKE_TEXTURE_RADIUS)
+        .setAlpha(random(0.55, 0.95))
+        .setScrollFactor(0)
+        .setDepth(30);
       return {
-        x: random(0, WORLD_WIDTH),
-        y: random(0, WORLD_HEIGHT),
-        size,
-        alpha: random(0.55, 0.95),
-        // Bigger flakes are "closer" and fall faster.
+        image,
         fallSpeed: 25 + size * 14,
         sway: random(8, 22),
         phase: random(0, Math.PI * 2),
@@ -39,17 +46,12 @@ export class Snow {
   }
 
   update(dt: number, elapsed: number): void {
-    const g = this.graphics;
-    g.clear();
-    for (const f of this.flakes) {
-      f.y += f.fallSpeed * dt;
-      f.x += Math.cos(elapsed * 0.8 + f.phase) * f.sway * dt;
-      if (f.y > WORLD_HEIGHT + 10) {
-        f.y = -10;
-        f.x = random(0, WORLD_WIDTH);
+    for (const { image, fallSpeed, sway, phase } of this.flakes) {
+      image.y += fallSpeed * dt;
+      image.x += Math.cos(elapsed * 0.8 + phase) * sway * dt;
+      if (image.y > WORLD_HEIGHT + 10) {
+        image.setPosition(random(0, WORLD_WIDTH), -10);
       }
-      g.fillStyle(0xffffff, f.alpha);
-      g.fillCircle(f.x, f.y, f.size);
     }
   }
 }

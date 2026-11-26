@@ -6,6 +6,7 @@ import { COOKIE_RADIUS, SNOWBALL_RADIUS, WORLD_HEIGHT, WORLD_WIDTH } from '../..
 import { gapsOf, hurdleBox } from '../../shared/course.ts';
 import { type GameState, newGame, update } from '../../shared/game.ts';
 import type { Level } from '../../shared/levels/registry.ts';
+import type { DogId } from '../../shared/profiles.ts';
 import { leftEdge } from '../../shared/player.ts';
 import * as art from './art.ts';
 import { addWhiteDogTexture, dogLook } from './dogs.ts';
@@ -14,7 +15,7 @@ import { Snow } from './snow.ts';
 
 export interface PlaySceneOptions {
   level: Level;
-  dogId: string;
+  dogId: DogId;
   /** True while the run should stand still, such as with the phone upright. */
   isPaused: () => boolean;
   onFinish: (gingerbread: number, hearts: number) => void;
@@ -165,11 +166,9 @@ export class PlayScene extends Phaser.Scene {
     const look = dogLook(this.options.dogId);
     const picture = this.add.image(0, 0, look.texture).setDisplaySize(DOG_PICTURE_SIZE, DOG_PICTURE_SIZE);
     const extras = this.add.graphics();
-    // Scarf around the neck, tails fluttering back.
     extras.fillStyle(look.scarf, 1);
     extras.fillRoundedRect(12, -22, 24, 9, 4);
     extras.fillTriangle(14, -18, 4, -6, 10, -4);
-    // Santa hat on the head, leaning back.
     const bx = 31;
     const by = -32;
     extras.fillStyle(art.CANDY_RED, 1);
@@ -206,7 +205,6 @@ export class PlayScene extends Phaser.Scene {
     state.cookies.forEach((c, i) => {
       const image = this.cookieImages[i]!;
       image.setVisible(!c.taken);
-      // Cookies float gently up and down; only the picture moves.
       image.y = art.sy(c.y) + Math.sin(this.elapsed * 2.5 + c.x * 0.01) * 4;
     });
 
@@ -221,11 +219,9 @@ export class PlayScene extends Phaser.Scene {
 
     const body = state.dog.body;
     this.dog.setPosition(body.center.x, art.sy(body.center.y));
-    // Level out in the air; follow the ground otherwise.
     const target = state.dog.groundAngle ?? 0;
     this.tilt += (target - this.tilt) * Math.min(dt * TILT_RATE, 1);
     this.dogPicture.setRotation(-this.tilt);
-    // Blink while the dog is protected after a respawn.
     this.dog.setAlpha(state.grace > 0 && Math.floor(this.elapsed * 8) % 2 === 0 ? 0.35 : 1);
 
     this.hud.update(state.hearts, state.gingerbread, state.events.includes('heartLost'));

@@ -1,10 +1,10 @@
 // The first screen: type your own name and pick a dog.
 
-import { MAX_NAME_LENGTH, cleanName } from '../../shared/players.ts';
+import { DEFAULT_DOG, type DogId, MAX_NAME_LENGTH, cleanName } from '../../shared/profiles.ts';
 import { dogCards } from './dogCards.ts';
-import { el } from './dom.ts';
+import { el } from '../dom.ts';
 
-export function registerScreen(onSubmit: (name: string, dog: string) => Promise<void>): HTMLElement {
+export function registerScreen(onSubmit: (name: string, dog: DogId) => Promise<void>): HTMLElement {
   const form = el('form', 'screen register');
   form.append(el('h1', 'title', 'Agility Camp'), el('p', 'lead', 'Joulukalenteri, jossa uusi agilityrata avautuu joka päivä.'));
 
@@ -15,7 +15,7 @@ export function registerScreen(onSubmit: (name: string, dog: string) => Promise<
   name.enterKeyHint = 'done';
   nameLabel.append(name);
 
-  const cards = dogCards('elmo');
+  const cards = dogCards(DEFAULT_DOG);
   const error = el('p', 'form-error');
   const submit = el('button', 'primary', 'Aloita');
   submit.type = 'submit';

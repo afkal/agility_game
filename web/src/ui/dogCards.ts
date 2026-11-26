@@ -1,13 +1,13 @@
 // The three dogs side by side, for registration and for changing dog.
 
-import { DOG_IDS, type DogId } from '../../shared/players.ts';
+import { DEFAULT_DOG, DOG_IDS, type DogId } from '../../shared/profiles.ts';
 import { dogLook } from '../game/dogs.ts';
-import { el } from './dom.ts';
+import { el } from '../dom.ts';
 
 const hex = (color: number) => `#${color.toString(16).padStart(6, '0')}`;
 
 /** Radio cards for choosing a dog; returns the container and a getter. */
-export function dogCards(selected: string): { node: HTMLElement; value: () => DogId } {
+export function dogCards(selected: DogId): { node: HTMLElement; value: () => DogId } {
   const node = el('div', 'dog-cards');
   node.setAttribute('role', 'radiogroup');
   for (const id of DOG_IDS) {
@@ -28,6 +28,6 @@ export function dogCards(selected: string): { node: HTMLElement; value: () => Do
   }
   return {
     node,
-    value: () => (node.querySelector<HTMLInputElement>('input:checked')?.value ?? 'elmo') as DogId,
+    value: () => (node.querySelector<HTMLInputElement>('input:checked')?.value ?? DEFAULT_DOG) as DogId,
   };
 }
