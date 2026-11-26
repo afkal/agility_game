@@ -6,6 +6,17 @@ players and results in one SQLite file.
 
 ## First-time setup on the VPS
 
+On a Debian or Ubuntu VPS that already runs nginx and certbot, and whose
+domain already points at it, `setup-vps.sh` does all of the steps below in
+one go. Copy this directory to the VPS and run it once as root:
+
+```bash
+scp web/deploy/{setup-vps.sh,agility-camp.service,agility-camp.env.example,nginx.conf.example} you@your-vps:agility-camp-setup/
+ssh -t you@your-vps 'sudo bash agility-camp-setup/setup-vps.sh peli.example.org you'
+```
+
+It prints the test key it chose. The steps it takes, to do by hand elsewhere:
+
 1. **Node.js 26 or newer.** For example from NodeSource:
    `curl -fsSL https://deb.nodesource.com/setup_26.x | sudo bash - && sudo apt install -y nodejs`.
    Check with `node --version`. If `node` is not at `/usr/bin/node`, change
