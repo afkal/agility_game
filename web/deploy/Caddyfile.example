@@ -1,0 +1,6 @@
+# Add to your Caddyfile, replacing peli.example.org with your subdomain.
+# Caddy gets the HTTPS certificate by itself.
+peli.example.org {
+	header X-Robots-Tag "noindex"
+	reverse_proxy 127.0.0.1:8787
+}

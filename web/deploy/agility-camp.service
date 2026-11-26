@@ -1,0 +1,23 @@
+[Unit]
+Description=Agility Camp game server
+After=network.target
+
+[Service]
+Type=simple
+User=agility
+Group=agility
+WorkingDirectory=/opt/agility-camp/app
+EnvironmentFile=/etc/agility-camp.env
+# Node 26 or newer runs the TypeScript server directly.
+ExecStart=/usr/bin/node server/main.ts
+Restart=on-failure
+RestartSec=5
+# Keeps the database in /var/lib/agility-camp, owned by the service user.
+StateDirectory=agility-camp
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
