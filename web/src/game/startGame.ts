@@ -37,31 +37,40 @@ export interface GameHandle {
 
 /** The finish screen accepts "play again" only after this long, so a tap at the line cannot skip it. */
 const CELEBRATION_MIN_MS = 1000;
+/** Seconds counted down before a paused run goes on. */
+const RESUME_COUNTDOWN = 3;
 
 const portrait = window.matchMedia('(orientation: portrait) and (pointer: coarse)');
 
 export function startGame(host: HTMLElement, options: StartGameOptions): GameHandle {
   const root = el('div', 'game-root');
   const canvasHost = el('div', 'game-canvas');
-  const back = el('button', 'game-back', '✕');
-  back.setAttribute('aria-label', 'Takaisin kalenteriin');
+  const pauseButton = el('button', 'game-back', '❚❚');
+  pauseButton.setAttribute('aria-label', 'Tauko');
   const rotate = el('div', 'game-rotate', 'Käännä puhelin vaakatasoon');
   const finish = el('div', 'game-finish');
   finish.hidden = true;
-  root.append(canvasHost, back, rotate, finish);
+  const pauseScreen = el('div', 'game-finish game-pause');
+  pauseScreen.hidden = true;
+  const countdown = el('div', 'game-countdown');
+  countdown.hidden = true;
+  root.append(canvasHost, pauseButton, rotate, finish, pauseScreen, countdown);
   host.replaceChildren(root);
 
   let finishedAt = 0;
+  let countdownTimer: ReturnType<typeof setTimeout> | null = null;
   const scene = new PlayScene({
     level: options.level,
     dogId: options.dogId,
-    isPaused: () => portrait.matches || !finish.hidden,
+    isPaused: () => portrait.matches || !finish.hidden || !pauseScreen.hidden || !countdown.hidden,
     onFinish: (gingerbread, hearts) => {
       finishedAt = performance.now();
+      pauseButton.hidden = true;
       showFinish({ day: options.level.day, gingerbread, hearts, score: score(gingerbread, hearts) });
     },
     onGameOver: () => {
       finishedAt = performance.now();
+      pauseButton.hidden = true;
       showGameOver();
     },
   });
@@ -88,7 +97,54 @@ export function startGame(host: HTMLElement, options: StartGameOptions): GameHan
     destroy();
     options.onExit();
   };
-  back.addEventListener('click', exit);
+
+  /** Stop the run and ask whether to go on or stop. */
+  function pause(): void {
+    if (!finish.hidden || !pauseScreen.hidden) return;
+    if (countdownTimer !== null) clearTimeout(countdownTimer);
+    countdownTimer = null;
+    countdown.hidden = true;
+    pauseButton.hidden = true;
+    pauseScreen.replaceChildren(
+      el('h2', 'game-finish-title', 'Tauko'),
+      el('p', 'game-finish-score', `Luukku ${options.level.day} · ${options.level.name}`),
+    );
+    const buttons = el('div', 'game-finish-buttons');
+    const resume = el('button', 'game-button', 'Jatka');
+    const stop = el('button', 'game-button game-button-secondary', 'Lopeta');
+    buttons.append(resume, stop);
+    pauseScreen.append(buttons);
+    pauseScreen.hidden = false;
+    resume.addEventListener('click', () => {
+      pauseScreen.hidden = true;
+      countDown(RESUME_COUNTDOWN);
+    });
+    stop.addEventListener('click', exit);
+  }
+
+  /** Show 3, 2, 1 over the paused course, then let the run go on. */
+  function countDown(n: number): void {
+    if (n === 0) {
+      countdown.hidden = true;
+      countdownTimer = null;
+      pauseButton.hidden = false;
+      return;
+    }
+    countdown.textContent = String(n);
+    countdown.hidden = false;
+    countdownTimer = setTimeout(() => countDown(n - 1), 700);
+  }
+
+  pauseButton.addEventListener('click', pause);
+  const onKey = (event: KeyboardEvent) => {
+    if (event.key === 'Escape' || event.key === 'p' || event.key === 'P') pause();
+  };
+  // Leaving the game for another app or tab pauses it.
+  const onHidden = () => {
+    if (document.hidden) pause();
+  };
+  window.addEventListener('keydown', onKey);
+  document.addEventListener('visibilitychange', onHidden);
 
   /** Buttons appear after a moment, so a tap meant as a jump cannot press one. */
   function showButtonsSoon(buttons: HTMLElement): void {
@@ -112,6 +168,7 @@ export function startGame(host: HTMLElement, options: StartGameOptions): GameHan
     showButtonsSoon(buttons);
     again.addEventListener('click', () => {
       finish.hidden = true;
+      pauseButton.hidden = false;
       scene.restart();
     });
     toCalendar.addEventListener('click', exit);
@@ -152,6 +209,7 @@ export function startGame(host: HTMLElement, options: StartGameOptions): GameHan
 
     again.addEventListener('click', () => {
       finish.hidden = true;
+      pauseButton.hidden = false;
       scene.restart();
     });
     toCalendar.addEventListener('click', exit);
@@ -161,6 +219,9 @@ export function startGame(host: HTMLElement, options: StartGameOptions): GameHan
   function destroy(): void {
     if (destroyed) return;
     destroyed = true;
+    if (countdownTimer !== null) clearTimeout(countdownTimer);
+    window.removeEventListener('keydown', onKey);
+    document.removeEventListener('visibilitychange', onHidden);
     stopFollowing();
     exitFullscreen();
     game.destroy(true);

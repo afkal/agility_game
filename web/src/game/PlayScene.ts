@@ -35,6 +35,19 @@ const MAX_AIR_TILT = 0.45;
 const HEADROOM = 90;
 /** How quickly the view follows the dog up and back down, per second. */
 const CAMERA_RATE = 6;
+/** Distance the dog covers in one running step, for the bounce and snow puffs. */
+const STRIDE = 75;
+/** How high the dog bounces on each step. */
+const STEP_BOUNCE = 6;
+/** How long a puff of kicked-up snow lasts, in seconds. */
+const PUFF_LIFE = 0.45;
+
+interface Puff {
+  image: Phaser.GameObjects.Image;
+  vx: number;
+  vy: number;
+  age: number;
+}
 
 interface Backdrop {
   container: Phaser.GameObjects.Container;
@@ -54,6 +67,10 @@ export class PlayScene extends Phaser.Scene {
   private dog!: Phaser.GameObjects.Container;
   private dogPicture!: Phaser.GameObjects.Container;
   private tilt = 0;
+  private stride = 0;
+  private lastDogX: number | null = null;
+  private wasGrounded = true;
+  private puffs: Puff[] = [];
   private cameraY: number | null = null;
   private backdrops: Backdrop[] = [];
   private hud!: Hud;
@@ -239,15 +256,74 @@ export class PlayScene extends Phaser.Scene {
 
     const body = state.dog.body;
     this.dog.setPosition(body.center.x, art.sy(body.center.y));
+    const step = this.animateRun(dt);
     const { velocity } = state.dog.body;
     const airTilt = Math.max(-1, Math.min(1, velocity.y / JUMP_VELOCITY)) * MAX_AIR_TILT;
     const target = state.dog.groundAngle ?? airTilt;
     this.tilt += (target - this.tilt) * Math.min(dt * TILT_RATE, 1);
-    this.dogPicture.setRotation(-this.tilt);
+    this.dogPicture.setRotation(-this.tilt + step.wobble);
     this.dog.setAlpha(state.grace > 0 && Math.floor(this.elapsed * 8) % 2 === 0 ? 0.35 : 1);
 
     const flagsReached = state.checkpointsReached.filter(Boolean).length;
     this.hud.update(state.hearts, state.gingerbread, flagsReached, state.events.includes('heartLost'));
+  }
+
+  /**
+   * A light running look without leg frames: the dog bounces and squashes a
+   * little on every step and kicks up snow behind it, with a bigger puff on
+   * landing. Returns the small rock of the body to add to its tilt.
+   */
+  private animateRun(dt: number): { wobble: number } {
+    const body = this.state.dog.body;
+    const grounded = body.grounded;
+    const moved = this.lastDogX === null ? 0 : Math.max(body.center.x - this.lastDogX, 0);
+    this.lastDogX = body.center.x;
+    const feetY = art.sy(body.center.y - body.half.y);
+
+    const before = Math.floor(this.stride);
+    if (grounded) this.stride += moved / STRIDE;
+    if (grounded && Math.floor(this.stride) !== before) {
+      this.puff(body.center.x - 22, feetY, 3);
+    }
+    if (grounded && !this.wasGrounded) this.puff(body.center.x, feetY, 6);
+    this.wasGrounded = grounded;
+
+    const phase = this.stride * Math.PI;
+    const lift = grounded ? Math.abs(Math.sin(phase)) : 0;
+    const squash = grounded ? Math.cos(2 * phase) * 0.025 : 0;
+    this.dogPicture.y = -2 - lift * STEP_BOUNCE;
+    this.dogPicture.setScale(1 + squash, 1 - squash);
+
+    for (const p of this.puffs) {
+      if (!p.image.visible) continue;
+      p.age += dt;
+      const t = p.age / PUFF_LIFE;
+      if (t >= 1) {
+        p.image.setVisible(false);
+        continue;
+      }
+      p.image.x += p.vx * dt;
+      p.image.y += p.vy * dt;
+      p.vy += 160 * dt;
+      p.image.setAlpha(0.9 * (1 - t)).setScale(1.6 + t * 2.4);
+    }
+    return { wobble: grounded ? Math.sin(2 * phase) * 0.03 : 0 };
+  }
+
+  /** Kick up `count` little clouds of snow at a point on the ground. */
+  private puff(x: number, y: number, count: number): void {
+    for (let i = 0; i < count; i++) {
+      let p = this.puffs.find((candidate) => !candidate.image.visible);
+      if (!p) {
+        // Tinted a little blue, so the puffs show against the white snow.
+        p = { image: this.add.image(0, 0, 'flake').setDepth(9).setTint(0xb4cbe6), vx: 0, vy: 0, age: 0 };
+        this.puffs.push(p);
+      }
+      p.image.setPosition(x + (Math.random() - 0.5) * 24, y - 2).setVisible(true).setAlpha(0.9).setScale(1.6);
+      p.vx = -40 - Math.random() * 60;
+      p.vy = -50 - Math.random() * 60;
+      p.age = 0;
+    }
   }
 
   /** Confetti in Christmas colours falling across the view. */

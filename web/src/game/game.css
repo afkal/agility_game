@@ -129,3 +129,30 @@
   cursor: pointer;
   padding: 0;
 }
+
+/* The pause screen shows above the rotate prompt, so a player can stop without turning the phone. */
+.game-pause {
+  z-index: 7;
+  background: rgba(20, 40, 70, 0.7);
+}
+
+.game-countdown {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font: 700 clamp(80px, 25vh, 180px) FiraSans-Bold, system-ui, sans-serif;
+  text-shadow: 4px 4px 10px rgba(30, 58, 95, 0.6);
+  pointer-events: none;
+}
+
+.game-countdown[hidden] {
+  display: none;
+}
+
+.game-back[hidden] {
+  display: none;
+}
