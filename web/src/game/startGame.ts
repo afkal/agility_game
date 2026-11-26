@@ -9,6 +9,7 @@ import { score } from '../../shared/score.ts';
 import { el } from '../dom.ts';
 import { dogLook } from './dogs.ts';
 import { PlayScene } from './PlayScene.ts';
+import { enterFullscreen, exitFullscreen, followVisibleViewport } from './viewport.ts';
 import './game.css';
 
 export interface RunResult {
@@ -70,6 +71,8 @@ export function startGame(host: HTMLElement, options: StartGameOptions): GameHan
     input: { activePointers: 1 },
     scene,
   });
+  const stopFollowing = followVisibleViewport(root, () => game.scale.refresh());
+  root.addEventListener('pointerdown', enterFullscreen, { once: true });
 
   const exit = () => {
     destroy();
@@ -124,6 +127,8 @@ export function startGame(host: HTMLElement, options: StartGameOptions): GameHan
   function destroy(): void {
     if (destroyed) return;
     destroyed = true;
+    stopFollowing();
+    exitFullscreen();
     game.destroy(true);
     root.remove();
   }
