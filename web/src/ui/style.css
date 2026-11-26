@@ -465,3 +465,105 @@ input {
   font-size: 13px;
   opacity: 0.75;
 }
+
+.install-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.install-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.8);
+  font-size: 18px;
+}
+
+.install-number {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--red);
+  color: #fff;
+}
+
+.install-icon {
+  width: 22px;
+  height: 22px;
+  margin: 0 2px;
+  vertical-align: -5px;
+  color: #1a73e8;
+}
+
+.install-or,
+.install-tip {
+  margin: 0;
+  font-size: 16px;
+  text-align: center;
+}
+
+.install-tip {
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.45);
+  text-align: left;
+}
+
+.install-done[hidden] {
+  display: none;
+}
+
+.install-reminder {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--gold);
+}
+
+.install-reminder p {
+  margin: 4px 0 0;
+}
+
+.install-details summary {
+  margin-top: 6px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.install-details .install-steps {
+  margin-top: 8px;
+}
+
+.install-details .install-step {
+  font-size: 16px;
+  padding: 8px 10px;
+}
+
+.install-reminder .primary {
+  margin-top: 8px;
+}
+
+.install-close {
+  flex: none;
+  margin-left: auto;
+  border: 0;
+  background: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--night);
+}
+
+.install-pin {
+  white-space: nowrap;
+}

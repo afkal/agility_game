@@ -13,9 +13,28 @@ import { doorCard } from './doorCard.ts';
 import { button, el } from '../dom.ts';
 import { firstScreen, resultSaver } from './flow.ts';
 import { formatPin, registerScreen } from './register.ts';
+import { installReminder, installScreen, shouldGuideInstall } from './install.ts';
 import { MAX_NAME_LENGTH, cleanName } from '../../shared/profiles.ts';
 
 const PLAYER_STORAGE = 'agility-camp.player';
+/** Set once the player closes the calendar's install reminder. */
+const INSTALL_REMINDER_CLOSED = 'agility-camp.install-reminder-closed';
+
+function remembered(key: string): boolean {
+  try {
+    return localStorage.getItem(key) !== null;
+  } catch {
+    return false;
+  }
+}
+
+function remember(key: string): void {
+  try {
+    localStorage.setItem(key, '1');
+  } catch {
+    // Private browsing: the reminder shows again next time.
+  }
+}
 
 function storedPlayerId(): string | null {
   try {
@@ -61,6 +80,7 @@ export class App {
       }
     }
     if (this.player) await this.showCalendar();
+    else if (shouldGuideInstall()) this.show(installScreen(() => this.showRegister()));
     else this.showRegister();
   }
 
@@ -235,6 +255,13 @@ export class App {
         practise: () => void this.play(WARMUP.day),
       }),
     );
+    if (shouldGuideInstall() && !remembered(INSTALL_REMINDER_CLOSED)) {
+      const reminder = installReminder(player.pin, () => {
+        remember(INSTALL_REMINDER_CLOSED);
+        reminder.remove();
+      });
+      this.root.querySelector('.calendar-header')?.after(reminder);
+    }
   }
 
   private async openDoor(day: number, state: DoorState): Promise<void> {

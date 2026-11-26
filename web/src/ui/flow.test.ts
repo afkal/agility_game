@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { RunPost } from '../api.ts';
-import { doorDisplay, firstScreen, resultSaver } from './flow.ts';
+import { doorDisplay, firstScreen, platformOf, resultSaver } from './flow.ts';
 
 const run = { day: 1, gingerbread: 23, hearts: 2, score: 330 };
 
@@ -14,6 +14,16 @@ describe('screen flow', () => {
     expect(doorDisplay('open', false)).toBe('coming-soon');
     expect(doorDisplay('open', true)).toBe('open');
     expect(doorDisplay('closed', false)).toBe('closed');
+  });
+});
+
+describe('install guide', () => {
+  it('tells iPhones, iPads and Android phones apart from computers', () => {
+    expect(platformOf('Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15', 5)).toBe('ios');
+    expect(platformOf('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15', 5)).toBe('ios');
+    expect(platformOf('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15', 0)).toBe('other');
+    expect(platformOf('Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 Chrome/142.0 Mobile', 5)).toBe('android');
+    expect(platformOf('Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/142.0', 0)).toBe('other');
   });
 });
 

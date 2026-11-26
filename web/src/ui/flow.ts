@@ -6,6 +6,17 @@ import type { RunResult, SaveOutcome } from '../game/startGame.ts';
 
 export type Screen = 'register' | 'calendar';
 
+export type Platform = 'ios' | 'android' | 'other';
+
+/** Which install steps fit the device, from its browser's description of itself. */
+export function platformOf(userAgent: string, maxTouchPoints: number): Platform {
+  // iPads describe themselves as Macs, but have a touch screen.
+  if (/iPhone|iPad|iPod/.test(userAgent) || (/Macintosh/.test(userAgent) && maxTouchPoints > 1)) return 'ios';
+  if (/Android/.test(userAgent)) return 'android';
+  return 'other';
+}
+
+
 /** The first screen: registration without a remembered player, else the calendar. */
 export function firstScreen(storedPlayerId: string | null): Screen {
   return storedPlayerId ? 'calendar' : 'register';
