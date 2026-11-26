@@ -281,6 +281,7 @@ stateDiagram-v2
   Finished --> Playing: play again
   Finished --> Calendar: back
   Playing --> Playing: last heart lost, level rebuilt
+  Playing --> Calendar: back button, run not saved
 ```
 
 API surface (directional, final shapes decided in U4):
@@ -432,14 +433,16 @@ Test seam: pure functions under Vitest in Node. It catches rule, timing and layo
 1. The scene calls the core's `update` each frame and draws from its state: camera x from the scroll position, shapes for ground, hurdles, tables, A-frame, gaps, snowballs, cookies, checkpoints and finish tree, ported from `src/art.rs` and `src/visuals.rs`.
 2. The dog is the silhouette with the Santa hat and slope tilt; `dogs.ts` builds the black and white textures and the red or green scarf (KTD10).
 3. `pointerdown` anywhere and Space both feed the core's jump input; the HUD shows hearts, cookies and the day number (R27).
-4. The finish screen shows cookies, hearts and score with confetti, then offers "Pelaa uudelleen" and "Takaisin kalenteriin" after the Rust version's short celebration delay.
-5. Scale FIT at 1280 × 800 and the portrait rotate overlay per KTD11. While the overlay shows, the scene does not advance the run, so a player who taps play with the phone upright loses nothing before turning it.
+4. A small "back to calendar" button sits in a top corner of the play screen. Taps on it never count as jumps, and leaving this way saves no result.
+5. The finish screen shows cookies, hearts and score with confetti, then offers "Pelaa uudelleen" and "Takaisin kalenteriin" after the Rust version's short celebration delay.
+6. Scale FIT at 1280 × 800 and the portrait rotate overlay per KTD11. While the overlay shows, the scene does not advance the run, so a player who taps play with the phone upright loses nothing before turning it.
 
 **Patterns to follow:** `src/visuals.rs` (camera follow, dog tilt), `src/art.rs` (shape builders), `src/hud.rs` (finish screen and confetti), `src/snow.rs`.
 
 **Test scenarios:**
 - Each of Elmo, Laku and Alma maps to the expected base color and scarf.
 - An unknown dog id falls back to Elmo.
+- A tap on the back button returns to the calendar without a jump and without posting a run.
 
 Look and feel are verified by play, not by tests.
 
@@ -680,13 +683,3 @@ Waits on: PR2 (merge order only). Separate PR because door 2 must reach producti
 - Rate limiting and anti-cheat beyond KTD5's checks: the subdomain is not secret (its certificate appears in public certificate logs), but a stranger can at most add names and scores to a family leaderboard, which the user would notice and can clean up in SQLite; revisit if that happens or the link is shared widely.
 - Database backups: results are a December keepsake, and the SQLite file can be copied by hand; revisit if the user wants automatic backups.
 
----
-
-## Deferred / Open Questions
-
-### From 2026-11-26 review
-
-- **A player cannot leave a level once it has started** — U3 Phaser play scene; U5 HTML shell (P2, design-lens, confidence 75)
-
-  The app flow has no way back from play to the calendar except finishing, and the browser back gesture would drop the Phaser scene without a defined state. A player who opened the wrong door or has to stop must play to the end or reload.
-  Change: add a small "back to calendar" button in a corner of the play screen; taps on it do not count as jumps and the run is not saved.
