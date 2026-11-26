@@ -6,7 +6,7 @@ import { type CalendarDate, DOOR_COUNT, FIRST_SEASON, doorStates, helsinkiDate, 
 import { STARTING_HEARTS } from '../shared/constants.ts';
 import { LEVELS, cookieCount, levelForDay } from '../shared/levels/registry.ts';
 import { DOG_IDS, type DogId, cleanName, cleanPin, isDogId } from '../shared/profiles.ts';
-import { type Outfit, SLOTS, type Slot, itemById, itemForDay, resolveOutfit, unlockedItems } from '../shared/wardrobe.ts';
+import { ITEMS, type Outfit, SLOTS, type Slot, itemById, itemForDay, resolveOutfit, unlockedItems } from '../shared/wardrobe.ts';
 import { score } from '../shared/score.ts';
 import type { Store } from './db.ts';
 
@@ -21,6 +21,9 @@ export interface AppOptions {
 }
 
 const released = new Set(LEVELS.map((level) => level.day));
+
+/** In test mode every dog may wear every item, so all of them can be tried in play. */
+const ALL_ITEMS = ITEMS.map((item) => item.id);
 
 /** Wrong sign-in codes allowed from one address before it has to wait. */
 const MAX_FAILED_SIGN_INS = 10;
@@ -85,7 +88,7 @@ export function createApp(options: AppOptions): Hono {
     const finished = store.finishedDays(playerId, testMode);
     const dogs = {} as Record<DogId, { unlocked: string[]; outfit: Outfit }>;
     for (const dog of DOG_IDS) {
-      const unlocked = unlockedItems(finished.get(dog) ?? []);
+      const unlocked = testMode ? ALL_ITEMS : unlockedItems(finished.get(dog) ?? []);
       dogs[dog] = { unlocked, outfit: resolveOutfit(store.storedOutfit(playerId, dog), unlocked) };
     }
     return { dogs };
@@ -108,7 +111,7 @@ export function createApp(options: AppOptions): Hono {
     if (!isDogId(dog) || !(SLOTS as readonly string[]).includes(slot)) return c.json({ error: 'invalid-outfit' }, 400);
     const testMode = isTest(c.req.header('x-test-key'));
     if (item !== null) {
-      const unlocked = unlockedItems(store.finishedDays(id, testMode).get(dog) ?? []);
+      const unlocked = testMode ? ALL_ITEMS : unlockedItems(store.finishedDays(id, testMode).get(dog) ?? []);
       if (typeof item !== 'string' || itemById(item)?.slot !== slot || !unlocked.includes(item)) {
         return c.json({ error: 'item-not-available' }, 400);
       }

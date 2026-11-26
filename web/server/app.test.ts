@@ -233,6 +233,21 @@ describe('wardrobe', () => {
   });
 });
 
+describe('wardrobe in test mode', () => {
+  it('lets every dog wear every item, without touching what real play has won', async () => {
+    const { call, register } = setup(december(3));
+    const player = await register('Timo');
+    const test = { 'x-test-key': TEST_KEY };
+    const wardrobe = (await call('GET', `/api/players/${player.id}/wardrobe`, undefined, test)).body;
+    expect(wardrobe.dogs.alma.unlocked).toContain('star-band');
+    const put = await call('PUT', `/api/players/${player.id}/outfit`, { dog: 'alma', slot: 'head', item: 'star-band' }, test);
+    expect(put.body.dogs.alma.outfit.head).toBe('star-band');
+    const real = (await call('GET', `/api/players/${player.id}/wardrobe`)).body;
+    expect(real.dogs.alma.unlocked).toEqual(['collar']);
+    expect(real.dogs.alma.outfit).toEqual({ neck: 'collar' });
+  });
+});
+
 describe('test mode switched off', () => {
   it('saves runs and reports no test mode when no test key is configured', async () => {
     const app = createApp({ store: new Store(':memory:'), now: () => new Date(december(3)) });
