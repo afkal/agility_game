@@ -36,6 +36,29 @@ function shapeElement(shape: Shape): SVGElement {
   }
 }
 
+const WHITE_DOG_FILTER = 'white-dog';
+
+/** Alma's look: the black silhouette turned white with a thin grey outline, as in the game. */
+function ensureWhiteDogFilter(): void {
+  if (document.getElementById(WHITE_DOG_FILTER)) return;
+  const holder = svg('svg', { width: 0, height: 0, 'aria-hidden': 'true', style: 'position:absolute' });
+  const filter = svg('filter', { id: WHITE_DOG_FILTER, x: '-5%', y: '-5%', width: '110%', height: '110%' });
+  filter.append(
+    svg('feMorphology', { in: 'SourceAlpha', operator: 'dilate', radius: 1, result: 'grown' }),
+    svg('feFlood', { 'flood-color': '#4a5a72', result: 'edgeColour' }),
+    svg('feComposite', { in: 'edgeColour', in2: 'grown', operator: 'in', result: 'outline' }),
+    svg('feFlood', { 'flood-color': '#f4f6fa', result: 'bodyColour' }),
+    svg('feComposite', { in: 'bodyColour', in2: 'SourceAlpha', operator: 'in', result: 'body' }),
+  );
+  const merge = svg('feMerge', {});
+  merge.append(svg('feMergeNode', { in: 'outline' }), svg('feMergeNode', { in: 'body' }));
+  filter.append(merge);
+  const defs = svg('defs', {});
+  defs.append(filter);
+  holder.append(defs);
+  document.body.append(holder);
+}
+
 /** One item as an SVG group, moved, turned and scaled into its place on the dog. */
 export function partElement(part: OutfitPart): SVGGElement {
   const { centre, placement: p } = part;
@@ -57,7 +80,11 @@ export function dogPicture(
 ): SVGSVGElement {
   const root = svg('svg', { viewBox, class: className, 'aria-hidden': 'true' });
   const image = svg('image', { href: '/standing-right.png', x: -75, y: -75, width: 150, height: 150 });
-  if (dog === 'alma') image.setAttribute('class', 'dog-alma');
+  if (dog === 'alma') {
+    // An SVG filter, not a CSS one: mobile Chrome ignores CSS filters inside SVG.
+    ensureWhiteDogFilter();
+    image.setAttribute('filter', `url(#${WHITE_DOG_FILTER})`);
+  }
   root.append(image, ...outfitParts(outfit, dog, placements).map(partElement));
   return root;
 }

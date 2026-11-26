@@ -38,6 +38,8 @@ const MAX_AIR_TILT = 0.45;
 const HEADROOM = 90;
 /** How quickly the view follows the dog up and back down, per second. */
 const CAMERA_RATE = 6;
+/** How much bigger the snowman is drawn than its hit box. */
+const SNOWMAN_LOOK_SCALE = 1.3;
 /** Distance the dog covers in one running step, for the bounce and snow puffs. */
 const STRIDE = 75;
 /** How high the dog bounces on each step. */
@@ -208,7 +210,12 @@ export class PlayScene extends Phaser.Scene {
     }
     for (const [x0, x1] of gapsOf(layout)) art.drawPond(chunkAt(x0), x0, x1);
     for (const x of layout.hurdles) art.drawHurdle(chunkAt(x), hurdleBox(x));
-    for (const x of layout.snowmen) art.drawSnowman(chunkAt(x), x, SNOWMAN_WIDTH, SNOWMAN_HEIGHT);
+    // The snowman is drawn a size bigger than the box that costs a heart, so it
+    // shows well and a near miss stays a miss.
+    for (const x of layout.snowmen) {
+      const w = SNOWMAN_WIDTH * SNOWMAN_LOOK_SCALE;
+      art.drawSnowman(chunkAt(x), x + SNOWMAN_WIDTH / 2 - w / 2, w, SNOWMAN_HEIGHT * SNOWMAN_LOOK_SCALE);
+    }
     for (const branch of layout.branches) art.drawBranch(chunkAt(branch.x0), branch);
     for (const t of layout.tables) art.drawTable(chunkAt(t.x0), t);
     for (const a of layout.aframes) art.drawAFrame(chunkAt(a.x0), a);
@@ -337,8 +344,8 @@ export class PlayScene extends Phaser.Scene {
     for (let i = 0; i < count; i++) {
       let p = this.puffs.find((candidate) => !candidate.image.visible);
       if (!p) {
-        // Tinted a little blue, so the puffs show against the white snow.
-        p = { image: this.add.image(0, 0, 'flake').setDepth(9).setTint(0xb4cbe6), vx: 0, vy: 0, age: 0 };
+        // Almost white, like powder snow.
+        p = { image: this.add.image(0, 0, 'flake').setDepth(9).setTint(0xf2f7ff), vx: 0, vy: 0, age: 0 };
         this.puffs.push(p);
       }
       p.image.setPosition(x + (Math.random() - 0.5) * 24, y - 2).setVisible(true).setAlpha(0.9).setScale(1.6);

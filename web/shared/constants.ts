@@ -34,12 +34,12 @@ export const JUMP_BUFFER_TIME = 0.12;
 export const STARTING_HEARTS = 3;
 /** After a respawn the dog cannot lose a heart for this long. */
 export const RESPAWN_GRACE = 2;
-export const SNOWBALL_RADIUS = 22;
+export const SNOWBALL_RADIUS = 32;
 /** Snowballs roll towards the dog at this speed. */
 export const SNOWBALL_SPEED = 130;
 export const SNOWBALL_GRAVITY = 1200;
 /** Snowball hits use a slightly smaller box, so a near miss is a miss. */
-export const SNOWBALL_HIT_SHRINK = 6;
+export const SNOWBALL_HIT_SHRINK = 8;
 
 export const GROUND_TOP = -300;
 export const GROUND_BOTTOM = -400;

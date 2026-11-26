@@ -22,6 +22,8 @@ export const HEART_RED = 0xeb2e4d;
 const ICE = 0x9edbf2;
 const DEEP_WATER = 0x3d78b3;
 const TRUNK = 0x6b4529;
+/** Pale, frosty green for the trees on the hills behind the course. */
+const FROSTED_PINE = 0x5f9c83;
 
 type G = Phaser.GameObjects.Graphics;
 
@@ -164,14 +166,26 @@ export function drawAFrame(g: G, a: AFrame): void {
   circle(g, GOLD, apex.x, apex.y + 4, 10);
 }
 
-export function drawPine(g: G, x: number, baseY: number, height: number): void {
+/**
+ * A spruce. `snowy` ones, for the hills behind the course, are paler and
+ * heavy with snow, so the dog and the obstacles stand out in front of them.
+ */
+export function drawPine(g: G, x: number, baseY: number, height: number, snowy = false): void {
   const w = height * 0.45;
   rect(g, TRUNK, x - w * 0.09, baseY, x + w * 0.09, baseY + height * 0.2);
   [1, 0.78, 0.55].forEach((scale, i) => {
     const y0 = baseY + height * (0.15 + i * 0.22);
     const half = w * scale;
-    triangle(g, DARK_PINE, x - half, y0, x + half, y0, x, y0 + height * 0.42);
-    triangle(g, SNOW_WHITE, x - half * 0.35, y0 + height * 0.28, x + half * 0.35, y0 + height * 0.28, x, y0 + height * 0.42);
+    const top = y0 + height * 0.42;
+    triangle(g, snowy ? FROSTED_PINE : DARK_PINE, x - half, y0, x + half, y0, x, top);
+    if (snowy) {
+      // Snow over the upper half of each tier and a fringe along its bottom.
+      triangle(g, SNOW_WHITE, x - half * 0.6, y0 + height * 0.17, x + half * 0.6, y0 + height * 0.17, x, top);
+      g.fillStyle(SNOW_WHITE, 1);
+      for (let k = -2; k <= 2; k++) g.fillEllipse(x + (half * k) / 2.6, sy(y0 + 2), half * 0.42, 7);
+    } else {
+      triangle(g, SNOW_WHITE, x - half * 0.35, y0 + height * 0.28, x + half * 0.35, y0 + height * 0.28, x, top);
+    }
   });
 }
 
@@ -232,13 +246,17 @@ export function drawGingerbreadMan(g: G, height: number, cx = 0, cy = 0): void {
 
 /** A snowball centred on (0, 0), with marks so the rolling shows. */
 export function drawSnowball(g: G, r: number, cx = 0, cy = 0): void {
-  g.fillStyle(SNOW_SHADE, 1);
+  // A blue-grey rim and a shaded lower side, so the ball stands out against the snowy ground.
+  g.fillStyle(0x7f9cc4, 1);
   g.fillCircle(cx, cy, r);
+  g.fillStyle(0xb9cde6, 1);
+  g.fillCircle(cx, cy, r - 2.5);
   g.fillStyle(SNOW_WHITE, 1);
-  g.fillCircle(cx - 2, cy - 2, r * 0.85);
-  g.fillStyle(SNOW_SHADE, 1);
-  g.fillCircle(cx + r * 0.45, cy, 3);
-  g.fillCircle(cx - r * 0.3, cy + r * 0.4, 2.5);
+  g.fillCircle(cx - r * 0.12, cy - r * 0.14, r * 0.78);
+  g.fillStyle(0x9fb8d6, 1);
+  g.fillCircle(cx + r * 0.45, cy + r * 0.1, r * 0.11);
+  g.fillCircle(cx - r * 0.3, cy + r * 0.45, r * 0.09);
+  g.fillCircle(cx + r * 0.05, cy - r * 0.45, r * 0.07);
 }
 
 /** A heart centred on (0, 0). */
@@ -260,7 +278,7 @@ export function drawHill(g: G, near: boolean): void {
       [-30, 120],
       [60, 100],
     ] as const) {
-      drawPine(g, dx, -220, h);
+      drawPine(g, dx, -220, h, true);
     }
   } else {
     g.fillStyle(0xd6e8fa, 1);

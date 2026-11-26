@@ -141,10 +141,6 @@ input {
   object-fit: contain;
 }
 
-.dog-alma {
-  filter: invert(1) drop-shadow(0 0 2px #4a5a72) drop-shadow(0 0 1px #4a5a72);
-}
-
 .dog-preview {
   display: block;
   width: min(220px, 60vw);

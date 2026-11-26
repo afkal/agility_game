@@ -194,7 +194,7 @@ export class App {
 
     screen.append(
       el('h1', 'title', 'Koirat ja varusteet'),
-      el('p', 'lead', 'Valitse koira, jolla pelaat. Jokainen koira voittaa luukun varusteen ja pukee sen heti ylleen, kun se juoksee radan maaliin. Täällä voit vaihtaa varusteita.'),
+      el('p', 'lead', 'Valitse koira, jolla pelaat. Täällä voit myös vaihtaa varusteita sitä mukaa kun voitat niitä kalenterista.'),
       cards.node,
       closet,
       error,
