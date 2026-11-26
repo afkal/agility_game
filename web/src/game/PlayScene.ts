@@ -174,11 +174,18 @@ export class PlayScene extends Phaser.Scene {
     for (let x = layout.ground[0]![0]; x < end; x += CHUNK) {
       this.chunks.push(this.add.graphics().setDepth(1));
     }
-    const chunkAt = (x: number) =>
-      this.chunks[Math.min(this.chunks.length - 1, Math.max(0, Math.floor((x - layout.ground[0]![0]) / CHUNK)))]!;
+    const firstX = layout.ground[0]![0];
+    const chunkAt = (x: number) => this.chunks[Math.min(this.chunks.length - 1, Math.max(0, Math.floor((x - firstX) / CHUNK)))]!;
 
     for (const [x0, x1] of layout.ground) {
-      for (let x = x0; x < x1; x += CHUNK) art.drawGround(chunkAt(x), x, Math.min(x + CHUNK, x1));
+      // Cut each run at the slice edges, so every slice holds only its own
+      // stretch of ground and none goes missing when a slice is hidden.
+      for (let x = x0; x < x1; ) {
+        const sliceEnd = firstX + (Math.floor((x - firstX) / CHUNK) + 1) * CHUNK;
+        const end = Math.min(sliceEnd, x1);
+        art.drawGround(chunkAt(x), x, end);
+        x = end;
+      }
     }
     for (const [x0, x1] of gapsOf(layout)) art.drawPond(chunkAt(x0), x0, x1);
     for (const x of layout.hurdles) art.drawHurdle(chunkAt(x), hurdleBox(x));
@@ -224,7 +231,9 @@ export class PlayScene extends Phaser.Scene {
     const firstX = state.layout.ground[0]![0];
     this.chunks.forEach((g, i) => {
       const x0 = firstX + i * CHUNK;
-      g.setVisible(x0 < camera.scrollX + WORLD_WIDTH + 600 && x0 + CHUNK > camera.scrollX - 600);
+      // Obstacles are drawn in the slice where they start and may reach into
+      // the next one, so a slice stays visible a whole slice beyond the view.
+      g.setVisible(x0 < camera.scrollX + WORLD_WIDTH && x0 + 2 * CHUNK > camera.scrollX);
     });
     state.checkpointsReached.forEach((reached, i) => {
       const flag = this.checkpointFlags[i]!;
