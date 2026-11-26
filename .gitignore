@@ -1,2 +1,5 @@
 /target
 .context/compound-engineering/
+/web/node_modules
+/web/dist
+/web/data

@@ -1,0 +1,26 @@
+{
+  "name": "agility-camp",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=26"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "server": "node server/main.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.11",
+    "phaser": "^4.2.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.2"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.11",
+    "hono": "^4.13.22"
+  }
+}
