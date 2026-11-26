@@ -50,8 +50,9 @@ the build, they open on their dates.
 - `https://<subdomain>/api/calendar` returns JSON with today's date.
 - On a phone over mobile data: register, play door 1, and see the result on the
   door's leaderboard. Redeploy and check the result is still there.
-- `https://<subdomain>/?testi=<TEST_KEY>` shows "testitila" and opens every
-  released door; results are not saved in test mode.
+- `https://<subdomain>/?testi=<TEST_KEY>` shows "testitila", opens every
+  released door and lets every dog wear every item. Test results go to a
+  separate test leaderboard that real players never see.
 
 ## Backups
 
