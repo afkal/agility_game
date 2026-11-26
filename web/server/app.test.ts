@@ -154,6 +154,18 @@ describe('runs and leaderboards', () => {
   });
 });
 
+describe('test mode switched off', () => {
+  it('saves runs and reports no test mode when no test key is configured', async () => {
+    const app = createApp({ store: new Store(':memory:'), now: () => new Date(december(3)) });
+    const json = { 'content-type': 'application/json' };
+    const player = await (await app.request('/api/players', { method: 'POST', headers: json, body: JSON.stringify({ name: 'Timo', dog: 'elmo' }) })).json();
+    const calendar = await (await app.request('/api/calendar')).json();
+    expect(calendar.testMode).toBe(false);
+    const run = await app.request('/api/runs', { method: 'POST', headers: { ...json, 'x-test-key': '' }, body: JSON.stringify({ playerId: player.id, day: 1, gingerbread: 5, hearts: 3 }) });
+    expect(await run.json()).toMatchObject({ saved: true });
+  });
+});
+
 describe('static files', () => {
   it('serves the page uncached and hashed build files as immutable', async () => {
     const root = mkdtempSync(join(tmpdir(), 'agility-static-'));
@@ -167,5 +179,6 @@ describe('static files', () => {
     expect(deepLink.body).toContain('Agility Camp');
     const asset = await call('GET', '/assets/index-abc123.js');
     expect(asset.headers.get('cache-control')).toContain('immutable');
+    expect((await call('GET', '/assets/startGame-gone.js')).status).toBe(404);
   });
 });

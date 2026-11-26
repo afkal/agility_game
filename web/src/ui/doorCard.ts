@@ -1,12 +1,14 @@
 // An opened door: the level's name, its leaderboard and the play button.
 
 import type { LeaderboardEntry } from '../api.ts';
+import type { DoorState } from '../../shared/calendar.ts';
 import type { Level } from '../../shared/levels/registry.ts';
 import { dogLook } from '../game/dogs.ts';
 import { button, el } from '../dom.ts';
 
 export function doorCard(
   day: number,
+  state: DoorState,
   level: Level | undefined,
   entries: LeaderboardEntry[] | null,
   actions: { play: () => void; close: () => void },
@@ -16,11 +18,13 @@ export function doorCard(
   card.setAttribute('role', 'dialog');
   card.append(el('h2', 'card-title', level ? `Luukku ${day} · ${level.name}` : `Luukku ${day}`));
 
-  if (!level) {
+  if (!level && state === 'open') {
     card.append(
-      el('p', 'lead', 'Tämän päivän rata on tulossa. Päivitä sivu, niin uusin versio latautuu.'),
+      el('p', 'lead', 'Tämän luukun rata on jo valmis. Päivitä sivu, niin uusin versio latautuu.'),
       button('primary', 'Päivitä sivu', () => location.reload()),
     );
+  } else if (!level) {
+    card.append(el('p', 'lead', 'Tämän luukun rata on tulossa pian.'));
   } else {
     card.append(el('h3', 'card-subtitle', 'Parhaat tulokset'));
     if (entries === null) {

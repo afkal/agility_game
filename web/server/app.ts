@@ -108,6 +108,8 @@ export function createApp(options: AppOptions): Hono {
       }
     });
     app.use('*', serveStatic({ root }));
+    // A build file that no longer exists must fail plainly, not load the page in its place.
+    app.get('/assets/*', (c) => c.text('Not found', 404));
     app.get('*', serveStatic({ root, path: 'index.html' }));
   }
 

@@ -31,4 +31,9 @@ rsync -az --delete \
   --exclude='*' \
   ./ "$DEPLOY_HOST:$DEPLOY_PATH/"
 
-ssh "$DEPLOY_HOST" "cd '$DEPLOY_PATH' && npm ci --omit=dev && sudo systemctl restart '$SERVICE' && systemctl --no-pager --lines=3 status '$SERVICE'"
+ssh "$DEPLOY_HOST" "cd '$DEPLOY_PATH' && npm ci --omit=dev && sudo systemctl restart '$SERVICE'"
+
+# Fail the deploy if the restarted server does not answer.
+ssh "$DEPLOY_HOST" "curl -fsS --retry 10 --retry-connrefused --retry-delay 1 http://127.0.0.1:\${PORT:-8787}/api/calendar > /dev/null" \
+  && echo "Deployed: the server answers." \
+  || { echo "The server did not answer after the restart; check: journalctl -u $SERVICE" >&2; exit 1; }

@@ -1,6 +1,7 @@
 // Moves between registration, the calendar, a door's card and play.
 
 import type { Api, Calendar, Player } from '../api.ts';
+import type { DoorState } from '../../shared/calendar.ts';
 import { levelForDay } from '../../shared/levels/registry.ts';
 import { calendarScreen } from './calendar.ts';
 import { dogCards } from './dogCards.ts';
@@ -33,6 +34,9 @@ export class App {
   private readonly api: Api;
   private player: Player | null = null;
   private calendar: Calendar | null = null;
+  /** Changes whenever the screen changes, so late async results can tell they are stale. */
+  private screen = 0;
+  private doorLoading = false;
 
   constructor(root: HTMLElement, api: Api) {
     this.root = root;
@@ -54,17 +58,14 @@ export class App {
   }
 
   private show(node: HTMLElement): void {
+    this.screen += 1;
     this.root.replaceChildren(node);
     window.scrollTo(0, 0);
   }
 
-  private showError(retry: () => void): void {
+  private showError(retry: () => void, message = 'Yhteys palvelimeen ei onnistunut.', action = 'Yritä uudelleen'): void {
     const screen = el('div', 'screen');
-    screen.append(
-      el('h1', 'title', 'Agility Camp'),
-      el('p', 'lead', 'Yhteys palvelimeen ei onnistunut.'),
-      button('primary', 'Yritä uudelleen', retry),
-    );
+    screen.append(el('h1', 'title', 'Agility Camp'), el('p', 'lead', message), button('primary', action, retry));
     this.show(screen);
   }
 
@@ -110,7 +111,7 @@ export class App {
     }
     this.show(
       calendarScreen(player.name, player.dog, this.calendar, {
-        openDoor: (day) => void this.openDoor(day),
+        openDoor: (day, state) => void this.openDoor(day, state),
         changeDog: () => this.showDogChoice(),
         switchPlayer: () => {
           storePlayerId(null);
@@ -121,10 +122,15 @@ export class App {
     );
   }
 
-  private async openDoor(day: number): Promise<void> {
+  private async openDoor(day: number, state: DoorState): Promise<void> {
+    if (this.doorLoading) return;
     const level = levelForDay(day);
+    const screen = this.screen;
+    this.doorLoading = true;
     const entries = level ? await this.api.leaderboard(day).catch(() => null) : [];
-    const card = doorCard(day, level, entries, {
+    this.doorLoading = false;
+    if (screen !== this.screen) return;
+    const card = doorCard(day, state, level, entries, {
       play: () => {
         card.remove();
         void this.play(day);
@@ -140,12 +146,17 @@ export class App {
     if (!level || !player) return;
     const host = el('div', 'lead', 'Ladataan…');
     this.show(host);
-    const { startGame } = await import('../game/startGame.ts');
-    startGame(host, {
-      level,
-      dogId: player.dog,
-      saveResult: resultSaver(this.api, player.id, Boolean(this.calendar?.testMode)),
-      onExit: () => void this.showCalendar(),
-    });
+    try {
+      const { startGame } = await import('../game/startGame.ts');
+      startGame(host, {
+        level,
+        dogId: player.dog,
+        saveResult: resultSaver(this.api, player.id, Boolean(this.calendar?.testMode)),
+        onExit: () => void this.showCalendar(),
+      });
+    } catch {
+      // After a release the old game files are gone; a reload fetches the new ones.
+      this.showError(() => location.reload(), 'Peli ei latautunut. Päivitä sivu, niin uusin versio latautuu.', 'Päivitä sivu');
+    }
   }
 }

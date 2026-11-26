@@ -36,11 +36,19 @@ export interface Api {
 }
 
 const TEST_KEY_STORAGE = 'agility-camp.test-key';
+/** A request that has not answered by then counts as failed, so the player can retry. */
+const REQUEST_TIMEOUT_MS = 10_000;
 
 function testKey(): string | null {
   try {
     const fromUrl = new URLSearchParams(location.search).get('testi');
-    if (fromUrl) sessionStorage.setItem(TEST_KEY_STORAGE, fromUrl);
+    if (fromUrl) {
+      sessionStorage.setItem(TEST_KEY_STORAGE, fromUrl);
+      // Keep the secret out of the address bar, history and shared links.
+      const url = new URL(location.href);
+      url.searchParams.delete('testi');
+      history.replaceState(history.state, '', url);
+    }
     return sessionStorage.getItem(TEST_KEY_STORAGE);
   } catch {
     return new URLSearchParams(location.search).get('testi');
@@ -51,7 +59,12 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
   const headers: Record<string, string> = { 'content-type': 'application/json' };
   const key = testKey();
   if (key) headers['x-test-key'] = key;
-  const res = await fetch(path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
+  const res = await fetch(path, {
+    method,
+    headers,
+    body: body === undefined ? undefined : JSON.stringify(body),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
   if (!res.ok) throw new Error(`${method} ${path} failed with ${res.status}`);
   return (await res.json()) as T;
 }
@@ -59,7 +72,7 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
 export const api: Api = {
   register: (name, dog) => call('POST', '/api/players', { name, dog }),
   async getPlayer(id) {
-    const res = await fetch(`/api/players/${encodeURIComponent(id)}`);
+    const res = await fetch(`/api/players/${encodeURIComponent(id)}`, { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
     if (res.status === 404) return null;
     if (!res.ok) throw new Error(`GET player failed with ${res.status}`);
     return (await res.json()) as Player;

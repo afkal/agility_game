@@ -1,6 +1,7 @@
 // The Advent calendar: the main view with 24 doors.
 
 import type { Calendar } from '../api.ts';
+import type { DoorState } from '../../shared/calendar.ts';
 import { levelForDay } from '../../shared/levels/registry.ts';
 import type { DogId } from '../../shared/profiles.ts';
 import { dogLook } from '../game/dogs.ts';
@@ -8,7 +9,7 @@ import { button, el } from '../dom.ts';
 import { doorDisplay } from './flow.ts';
 
 export interface CalendarActions {
-  openDoor: (day: number) => void;
+  openDoor: (day: number, state: DoorState) => void;
   changeDog: () => void;
   switchPlayer: () => void;
 }
@@ -39,7 +40,7 @@ export function calendarScreen(playerName: string, dog: DogId, calendar: Calenda
       node.append(el('span', 'door-note', 'Tulossa'));
     }
     node.disabled = state === 'closed';
-    node.addEventListener('click', () => actions.openDoor(door.day));
+    node.addEventListener('click', () => actions.openDoor(door.day, door.state));
     grid.append(node);
   }
   screen.append(header, grid);
