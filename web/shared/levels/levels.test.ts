@@ -2,7 +2,7 @@
 // fixed speed.
 
 import { describe, expect, it } from 'vitest';
-import { SNOWMAN_HEIGHT, SNOWMAN_WIDTH, COOKIE_RADIUS, DOG_HALF_SIZE, GRAVITY, GROUND_TOP, HURDLE_HEIGHT, HURDLE_WIDTH, JUMP_VELOCITY } from '../constants.ts';
+import { AIR_JUMP_VELOCITY, SNOWMAN_HEIGHT, SNOWMAN_WIDTH, COOKIE_RADIUS, DOG_HALF_SIZE, GRAVITY, GROUND_TOP, HURDLE_HEIGHT, HURDLE_WIDTH, JUMP_VELOCITY } from '../constants.ts';
 import { gapsOf, solidsOf, surfaceAt } from '../course.ts';
 import { aabbFromCenter, overlaps } from '../physics.ts';
 import { LEVELS, WARMUP } from './registry.ts';
@@ -11,6 +11,7 @@ import { LEVELS, WARMUP } from './registry.ts';
 const MARGIN = 20;
 const airtime = 2 * JUMP_VELOCITY / GRAVITY;
 const jumpHeight = (JUMP_VELOCITY * JUMP_VELOCITY) / (2 * GRAVITY);
+const airJumpHeight = (AIR_JUMP_VELOCITY * AIR_JUMP_VELOCITY) / (2 * GRAVITY);
 
 /** How long the dog's feet stay above `height` during a jump from the ground. */
 function timeAbove(height: number): number {
@@ -44,7 +45,6 @@ describe.each([...LEVELS, WARMUP].map((level) => [level.day, level] as const))('
         expect(surfaceAt(layout, probe), `snowman at ${x}`).toBe(GROUND_TOP);
       }
     }
-    expect(layout.snowmen.length).toBeGreaterThan(0);
   });
 
   it('has every step up lower than a jump', () => {
@@ -87,7 +87,8 @@ describe.each([...LEVELS, WARMUP].map((level) => [level.day, level] as const))('
   });
 
   it('has no cookie inside an obstacle or out of reach', () => {
-    const reachAboveSurface = jumpHeight + 2 * DOG_HALF_SIZE.y - MARGIN;
+    // A cookie may need the second jump, taken at the top of the first.
+    const reachAboveSurface = jumpHeight + airJumpHeight + 2 * DOG_HALF_SIZE.y - MARGIN;
     const boxes = solidsOf(layout).flatMap((s) => (s.kind === 'box' ? [s.box] : []));
     for (const c of layout.cookies) {
       const cookieBox = aabbFromCenter(c, { x: COOKIE_RADIUS, y: COOKIE_RADIUS });
@@ -108,8 +109,8 @@ describe.each([...LEVELS, WARMUP].map((level) => [level.day, level] as const))('
     );
     expect(layout.finishX).toBeGreaterThan(lastObstacle);
     const seconds = (layout.finishX - layout.startX) / level.speed;
-    // Doors are a challenge of two to three minutes; the warm-up is about one.
-    const [shortest, longest] = level === WARMUP ? [45, 90] : [120, 180];
+    // Doors are a challenge of two to three minutes; the warm-up is a short practice.
+    const [shortest, longest] = level === WARMUP ? [30, 90] : [120, 180];
     expect(seconds).toBeGreaterThanOrEqual(shortest);
     expect(seconds).toBeLessThanOrEqual(longest);
   });

@@ -134,6 +134,9 @@ const COOKIE_LIFT = 60;
 /** Some cookies on flat ground float this high, so the dog has to jump for them. */
 const HIGH_COOKIE_LIFT = 150;
 
+/** Sky cookies float above the top of a single jump, so they need the second jump. */
+const SKY_COOKIE_LIFT = 290;
+
 /** Lays a course out left to right from a cursor. */
 export class Builder {
   x = -600;
@@ -198,6 +201,14 @@ export class Builder {
     this.cookie(high.x0 + 190, high.top + COOKIE_LIFT);
     this.cookie(high.x0 + 130, GROUND_TOP + COOKIE_LIFT);
     this.ground(high.x1 - this.x + 300);
+  }
+
+  /** Flat ground with two cookies so high in the air that only a second jump reaches them. */
+  skyCookies(length: number): void {
+    const middle = this.x + length / 2;
+    this.cookie(middle - 60, GROUND_TOP + SKY_COOKIE_LIFT);
+    this.cookie(middle + 60, GROUND_TOP + SKY_COOKIE_LIFT);
+    this.ground(length);
   }
 
   /** A snowman to jump over, with a cookie above it for a clean jump. */

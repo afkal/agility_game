@@ -23,7 +23,7 @@ export interface RunResult {
 
 /** What happened to a finished run's result. */
 export interface SaveOutcome {
-  status: 'saved' | 'saved-test' | 'failed';
+  status: 'saved' | 'saved-test' | 'practice' | 'failed';
   /** Name of the item this run won for the dog, the first time it finishes the door. */
   newItem?: string;
   /** The dog's outfit after the run, with a won item already on. */
@@ -218,6 +218,8 @@ export function startGame(host: HTMLElement, options: StartGameOptions): GameHan
       }
       if (outcome.status === 'saved') {
         status.textContent = 'Tulos tallennettu!';
+      } else if (outcome.status === 'practice') {
+        status.textContent = 'Vapaa harjoittelu: tulosta ei tallenneta.';
       } else if (outcome.status === 'saved-test') {
         status.textContent = 'Testitulos tallennettu testilistalle.';
       } else {

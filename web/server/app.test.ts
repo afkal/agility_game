@@ -196,14 +196,11 @@ describe('runs and leaderboards', () => {
 });
 
 describe('warm-up course', () => {
-  it('is open before December, keeps its own leaderboard and wins no item', async () => {
-    const { call, register, postRun } = setup('2026-11-26T10:00:00Z');
+  it('is free practice: its runs are never saved', async () => {
+    const { call, register, postRun } = setup(december(3));
     const player = await register('Timo');
-    const run = await postRun(player.id, 10, 3, 0);
-    expect(run.body).toMatchObject({ saved: true, score: 250, newItem: null });
-    expect((await call('GET', '/api/levels/0/leaderboard')).body.entries).toEqual([{ name: 'Timo', dog: 'elmo', score: 250 }]);
-    expect((await call('GET', `/api/calendar?player=${player.id}`)).body.warmup).toEqual({ best: 250 });
-    expect((await postRun(player.id, 10, 3, 1)).status).toBe(400);
+    expect((await postRun(player.id, 10, 3, 0)).status).toBe(400);
+    expect((await call('GET', '/api/levels/0/leaderboard')).status).toBe(400);
   });
 });
 

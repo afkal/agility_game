@@ -13,6 +13,8 @@ export interface CalendarActions {
   openDoor: (day: number, state: DoorState) => void;
   changeDog: () => void;
   showProfile: () => void;
+  /** Start the warm-up course straight away; it has no leaderboard. */
+  practise: () => void;
 }
 
 export function calendarScreen(
@@ -44,11 +46,8 @@ export function calendarScreen(
   // The warm-up course is open all the time, and is the thing to do while waiting.
   const warmup = el('button', 'warmup');
   warmup.type = 'button';
-  warmup.append(
-    el('span', 'warmup-name', `🏁 ${WARMUP.name}`),
-    el('span', 'warmup-note', calendar.warmup.best === null ? 'Harjoittele ennen joulukuuta!' : `Paras tuloksesi ★ ${calendar.warmup.best}`),
-  );
-  warmup.addEventListener('click', () => actions.openDoor(WARMUP.day, 'open'));
+  warmup.append(el('span', 'warmup-name', `🏁 ${WARMUP.name}`), el('span', 'warmup-note', 'vapaa harjoittelu'));
+  warmup.addEventListener('click', actions.practise);
   intro.append(warmup);
 
   const grid = el('div', 'doors');

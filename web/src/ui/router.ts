@@ -6,7 +6,7 @@ import { ALWAYS_WORN, DEFAULT_OUTFIT, ITEMS, type Outfit, SLOTS, SLOT_NAMES } fr
 import { dogLook } from '../game/dogs.ts';
 import { dogPicture } from './dogPicture.ts';
 import type { DoorState } from '../../shared/calendar.ts';
-import { levelForDay } from '../../shared/levels/registry.ts';
+import { WARMUP, levelForDay } from '../../shared/levels/registry.ts';
 import { calendarScreen } from './calendar.ts';
 import { dogCards } from './dogCards.ts';
 import { doorCard } from './doorCard.ts';
@@ -232,6 +232,7 @@ export class App {
         openDoor: (day, state) => void this.openDoor(day, state),
         changeDog: () => void this.showDogs(),
         showProfile: () => this.showProfile(),
+        practise: () => void this.play(WARMUP.day),
       }),
     );
   }
@@ -266,7 +267,8 @@ export class App {
         level,
         dogId: player.dog,
         outfit: this.wardrobe?.dogs[player.dog].outfit ?? DEFAULT_OUTFIT,
-        saveResult: resultSaver(this.api, player.id),
+        // Warm-up runs are practice and are not saved.
+        saveResult: day === WARMUP.day ? async () => ({ status: 'practice' }) : resultSaver(this.api, player.id),
         onExit: () => void this.showCalendar(),
       });
     } catch {

@@ -1,87 +1,65 @@
 import { Builder, type CourseLayout } from '../course.ts';
 
 /**
- * Door 1, the original Christmas course: an easy start, then hurdles, tables,
- * gaps, the A-frame and snowballs, with snowmen that must not be knocked over
- * from the middle on, mixed more and more towards the finish.
+ * Door 1, the Christmas course: every obstacle of the game in four stretches
+ * between flags, from single hurdles to snowmen, snowballs and branches, with
+ * cookies high in the sky for those who master the second jump.
  */
 export function christmasCourse(): CourseLayout {
   const b = new Builder();
   b.flat(900, true);
-  // Warm-up: single hurdles and a low table.
+  // First stretch: hurdles, a gap and the first snowman.
   b.hurdle();
   b.flat(500, true);
-  b.hurdle();
-  b.flat(400, false);
-  b.table(350, 70);
-  // Branches to climb for cookies, or to run under.
-  b.branches();
-  b.checkpoint();
-  // Gaps.
   b.gap(100);
   b.flat(500, true);
   b.hurdle();
-  b.flat(400, false);
-  b.gap(120);
-  b.flat(600, true);
-  b.checkpoint();
-  // Table stairs.
-  b.stairs(70, 140);
-  b.flat(500, true);
-  b.hurdle();
-  b.flat(300, false);
-  b.hurdle();
+  b.flat(400, true);
+  b.snowman();
   b.flat(500, true);
   b.checkpoint();
-  // First snowball and the A-frame.
+  // Second: branches, a gap, sky cookies and a table.
+  b.branches();
+  b.flat(400, true);
+  b.gap(100);
+  b.flat(500, true);
+  b.skyCookies(600);
+  b.table(350, 70);
+  b.flat(400, true);
+  b.checkpoint();
+  // Third: the first snowball and the A-frame, then a hurdle and a snowman back to back.
   b.snowball();
   b.flat(400, false);
   b.aframe();
-  b.branches();
+  b.flat(400, true);
+  b.hurdle();
+  b.snowman();
+  b.flat(400, true);
+  b.stairs(70, 140);
+  b.flat(500, true);
   b.checkpoint();
-  // Mixing it up, and the first snowman.
-  b.gap(110);
+  // Fourth: everything mixed.
+  b.gap(120);
+  b.flat(500, true);
+  b.skyCookies(600);
+  b.branches();
+  b.hurdle();
   b.flat(400, true);
   b.table(400, 90);
   b.snowman();
-  b.hurdle();
   b.flat(500, true);
-  b.snowball();
   b.checkpoint();
-  b.stairs(80, 160);
-  b.flat(300, false);
-  b.gap(130);
-  b.flat(500, true);
-  b.hurdle();
-  b.flat(300, false);
+  // To the finish.
+  b.snowball();
   b.hurdle();
   b.flat(400, true);
-  b.checkpoint();
-  b.aframe();
-  b.snowman();
   b.gap(120);
   b.flat(400, true);
-  b.snowball();
-  b.hurdle();
-  b.branches();
-  b.checkpoint();
-  // Final stretch.
-  b.table(300, 100);
-  b.flat(200, false);
-  b.gap(130);
-  b.flat(400, true);
-  b.stairs(90, 170);
   b.snowman();
-  b.hurdle();
-  b.snowman();
-  b.hurdle();
   b.flat(400, true);
-  b.snowball();
-  b.checkpoint();
+  b.skyCookies(600);
   b.aframe();
-  b.flat(400, true);
-  b.gap(140);
-  b.flat(600, true);
+  b.flat(500, true);
   b.finish();
   return b.build();
 }

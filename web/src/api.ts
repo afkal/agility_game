@@ -18,8 +18,6 @@ export interface Calendar {
   season: number | null;
   testMode: boolean;
   doors: CalendarDoor[];
-  /** The player's best on the warm-up course. */
-  warmup: { best: number | null };
 }
 
 /** Someone who has joined, with their dog as it is dressed. */
