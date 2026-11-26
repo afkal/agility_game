@@ -567,3 +567,14 @@ input {
 .install-pin {
   white-space: nowrap;
 }
+
+.install-address {
+  margin: 0;
+  padding: 10px;
+  border-radius: 12px;
+  background: #fff;
+  text-align: center;
+  font-size: 18px;
+  user-select: all;
+  -webkit-user-select: all;
+}

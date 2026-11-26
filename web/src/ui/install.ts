@@ -115,16 +115,32 @@ export function installScreen(onSkip: () => void): HTMLElement {
   }
   screen.append(steps());
   if (platform() === 'ios') {
+    // Inside WhatsApp's own browser there is no "Add to Home Screen": the link
+    // has to go to Safari first.
     screen.append(
-      el(
-        'p',
-        'install-tip',
-        'Etkö löydä Lisää Koti-valikkoon -kohtaa? Sivu on silloin auennut WhatsAppin tai muun sovelluksen sisällä. Avaa se ensin Safarissa: napauta selainvalikkoa ja valitse Avaa Safarissa.',
-      ),
+      el('p', 'install-tip', 'Eikö Lisää Koti-valikkoon -kohtaa löydy? Kopioi linkki ja liitä se Safarin osoiteriville.'),
+      copyLinkButton(),
+      done,
     );
+  } else {
+    screen.append(done, button('link-button', 'Jatka selaimessa ilman asennusta', onSkip));
   }
-  screen.append(done, button('link-button', 'Jatka selaimessa ilman asennusta', onSkip));
   return screen;
+}
+
+/** Copies the game's address, to paste into Safari. */
+function copyLinkButton(): HTMLElement {
+  const address = `${location.origin}/`;
+  const copy = button('secondary', 'Kopioi linkki', async () => {
+    try {
+      await navigator.clipboard.writeText(address);
+      copy.textContent = 'Linkki kopioitu! Liitä se Safariin.';
+    } catch {
+      // Some in-app browsers do not allow copying: show the address to copy by hand.
+      copy.replaceWith(el('p', 'install-address', address));
+    }
+  });
+  return copy;
 }
 
 /**
