@@ -27,7 +27,8 @@
   color: #fff;
   font-size: 22px;
   cursor: pointer;
-  z-index: 3;
+  /* Above the rotate prompt, so a player can leave without turning the phone. */
+  z-index: 6;
 }
 
 .game-rotate {

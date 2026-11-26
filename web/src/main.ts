@@ -1,11 +1,6 @@
-import { LEVELS } from '../shared/levels/registry.ts';
-import "./fonts.css";
-import { startGame } from './game/startGame.ts';
+import './fonts.css';
+import './ui/style.css';
+import { api } from './api.ts';
+import { App } from './ui/router.ts';
 
-const app = document.querySelector<HTMLDivElement>('#app')!;
-startGame(app, {
-  level: LEVELS[0]!,
-  dogId: new URLSearchParams(location.search).get('dog') ?? 'elmo',
-  saveResult: async () => 'not-saved',
-  onExit: () => location.reload(),
-});
+void new App(document.querySelector<HTMLDivElement>('#app')!, api).start();
