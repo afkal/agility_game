@@ -16,7 +16,7 @@ export function doorCard(
   const backdrop = el('div', 'card-backdrop');
   const card = el('div', 'card');
   card.setAttribute('role', 'dialog');
-  card.append(el('h2', 'card-title', level ? `Luukku ${day} · ${level.name}` : `Luukku ${day}`));
+  card.append(el('h2', 'card-title', level ? (day === 0 ? level.name : `Luukku ${day} · ${level.name}`) : `Luukku ${day}`));
 
   if (!level && state === 'open') {
     card.append(

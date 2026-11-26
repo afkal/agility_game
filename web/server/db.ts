@@ -128,6 +128,11 @@ export class Store {
     return this.db.prepare('SELECT id, name, dog, pin FROM players WHERE id = ?').get(id) as Player | undefined;
   }
 
+  /** Every player, earliest first. */
+  listPlayers(): Player[] {
+    return this.db.prepare('SELECT id, name, dog, pin FROM players ORDER BY created_at, rowid').all() as unknown as Player[];
+  }
+
   playerByPin(pin: string): Player | undefined {
     return this.db.prepare('SELECT id, name, dog, pin FROM players WHERE pin = ?').get(pin) as Player | undefined;
   }

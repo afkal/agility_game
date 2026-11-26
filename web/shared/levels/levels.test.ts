@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { SNOWMAN_HEIGHT, SNOWMAN_WIDTH, COOKIE_RADIUS, DOG_HALF_SIZE, GRAVITY, GROUND_TOP, HURDLE_HEIGHT, HURDLE_WIDTH, JUMP_VELOCITY } from '../constants.ts';
 import { gapsOf, solidsOf, surfaceAt } from '../course.ts';
 import { aabbFromCenter, overlaps } from '../physics.ts';
-import { LEVELS } from './registry.ts';
+import { LEVELS, WARMUP } from './registry.ts';
 
 /** Extra room kept on every jump so courses are comfortable, not exact. */
 const MARGIN = 20;
@@ -18,7 +18,7 @@ function timeAbove(height: number): number {
   return (2 * Math.sqrt(Math.max(disc, 0))) / GRAVITY;
 }
 
-describe.each(LEVELS.map((level) => [level.day, level] as const))('door %i', (_day, level) => {
+describe.each([...LEVELS, WARMUP].map((level) => [level.day, level] as const))('level %i', (_day, level) => {
   const layout = level.build();
 
   it('has gaps the dog can fall into and jump over', () => {
@@ -97,7 +97,7 @@ describe.each(LEVELS.map((level) => [level.day, level] as const))('door %i', (_d
     }
   });
 
-  it('ends after every obstacle and takes two to three minutes', () => {
+  it('ends after every obstacle and lasts as long as planned', () => {
     const lastObstacle = Math.max(
       ...layout.hurdles,
       ...layout.snowmen,
@@ -108,8 +108,10 @@ describe.each(LEVELS.map((level) => [level.day, level] as const))('door %i', (_d
     );
     expect(layout.finishX).toBeGreaterThan(lastObstacle);
     const seconds = (layout.finishX - layout.startX) / level.speed;
-    expect(seconds).toBeGreaterThanOrEqual(120);
-    expect(seconds).toBeLessThanOrEqual(180);
+    // Doors are a challenge of two to three minutes; the warm-up is about one.
+    const [shortest, longest] = level === WARMUP ? [45, 90] : [120, 180];
+    expect(seconds).toBeGreaterThanOrEqual(shortest);
+    expect(seconds).toBeLessThanOrEqual(longest);
   });
 
   it('builds the same course every time', () => {

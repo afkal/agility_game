@@ -1,6 +1,6 @@
 // Moves between registration, the calendar, a door's card and play.
 
-import type { Api, Calendar, Player, Wardrobe } from '../api.ts';
+import type { Api, Calendar, Player, RosterEntry, Wardrobe } from '../api.ts';
 import { DOG_IDS, type DogId } from '../../shared/profiles.ts';
 import { ALWAYS_WORN, DEFAULT_OUTFIT, ITEMS, type Outfit, SLOTS, SLOT_NAMES } from '../../shared/wardrobe.ts';
 import { dogLook } from '../game/dogs.ts';
@@ -40,6 +40,7 @@ export class App {
   private player: Player | null = null;
   private calendar: Calendar | null = null;
   private wardrobe: Wardrobe | null = null;
+  private roster: RosterEntry[] | null = null;
   /** Changes whenever the screen changes, so late async results can tell they are stale. */
   private screen = 0;
   private doorLoading = false;
@@ -214,18 +215,20 @@ export class App {
     const player = this.player!;
     try {
       // The outfit is only decoration: without it the dog plays in its starting outfit.
-      const [calendar, wardrobe] = await Promise.all([
+      const [calendar, wardrobe, roster] = await Promise.all([
         this.api.calendar(player.id),
         this.api.wardrobe(player.id).catch(() => null),
+        this.api.roster().catch(() => null),
       ]);
       this.calendar = calendar;
       this.wardrobe = wardrobe;
+      this.roster = roster;
     } catch {
       this.showError(() => void this.showCalendar());
       return;
     }
     this.show(
-      calendarScreen(player.name, player.dog, this.calendar, {
+      calendarScreen(player.name, player.dog, this.calendar, this.roster, {
         openDoor: (day, state) => void this.openDoor(day, state),
         changeDog: () => void this.showDogs(),
         showProfile: () => this.showProfile(),

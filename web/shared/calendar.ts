@@ -36,6 +36,17 @@ export function seasonOf(date: CalendarDate): number | null {
 }
 
 /**
+ * Days from `date` to the first December the calendar opens, or null once it
+ * has started.
+ */
+export function daysUntilFirstDoor(date: CalendarDate): number | null {
+  if (seasonOf(date) !== null) return null;
+  const opening = Date.UTC(Math.max(date.year, FIRST_SEASON), 11, 1);
+  const today = Date.UTC(date.year, date.month - 1, date.day);
+  return Math.round((opening - today) / 86_400_000);
+}
+
+/**
  * The state of every door, 1 to 24. A door opens on its December day if its
  * level is released, and every released door is open from 25 December until
  * the next season. In test mode every released door is open.

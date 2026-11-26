@@ -97,7 +97,11 @@ export class PlayScene extends Phaser.Scene {
     addWhiteDogTexture(this);
     this.makeTextures();
     this.cameras.main.setBackgroundColor(art.SKY);
-    this.scale.on('resize', (size: Phaser.Structs.Size) => this.cameras.main.setSize(size.width, size.height));
+    this.scale.on('resize', (size: Phaser.Structs.Size) => {
+      this.cameras.main.setSize(size.width, size.height);
+      // A new view size jumps straight to the right height instead of easing there.
+      this.cameraY = null;
+    });
     this.state = newGame(this.options.level.build(), this.options.level.speed);
 
     this.createBackdrop();

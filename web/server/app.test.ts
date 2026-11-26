@@ -195,6 +195,32 @@ describe('runs and leaderboards', () => {
   });
 });
 
+describe('warm-up course', () => {
+  it('is open before December, keeps its own leaderboard and wins no item', async () => {
+    const { call, register, postRun } = setup('2026-11-26T10:00:00Z');
+    const player = await register('Timo');
+    const run = await postRun(player.id, 10, 3, 0);
+    expect(run.body).toMatchObject({ saved: true, score: 250, newItem: null });
+    expect((await call('GET', '/api/levels/0/leaderboard')).body.entries).toEqual([{ name: 'Timo', dog: 'elmo', score: 250 }]);
+    expect((await call('GET', `/api/calendar?player=${player.id}`)).body.warmup).toEqual({ best: 250 });
+    expect((await postRun(player.id, 10, 3, 1)).status).toBe(400);
+  });
+});
+
+describe('starting line', () => {
+  it('lists who has joined with their dog dressed, without codes or ids', async () => {
+    const { call, register, postRun } = setup(december(3));
+    const timo = await register('Timo', 'laku');
+    await register('Eveliina', 'alma');
+    await postRun(timo.id, 5, 3);
+    const { body } = await call('GET', '/api/roster');
+    expect(body.players).toEqual([
+      { name: 'Timo', dog: 'laku', outfit: { neck: 'collar', head: 'santa-hat' } },
+      { name: 'Eveliina', dog: 'alma', outfit: { neck: 'collar' } },
+    ]);
+  });
+});
+
 describe('wardrobe', () => {
   it('starts every dog in its collar', async () => {
     const { call, register } = setup(december(3));

@@ -18,6 +18,15 @@ export interface Calendar {
   season: number | null;
   testMode: boolean;
   doors: CalendarDoor[];
+  /** The player's best on the warm-up course. */
+  warmup: { best: number | null };
+}
+
+/** Someone who has joined, with their dog as it is dressed. */
+export interface RosterEntry {
+  name: string;
+  dog: DogId;
+  outfit: Outfit;
 }
 
 /** For each dog: the items it has won and what it wears. */
@@ -42,6 +51,7 @@ export interface Api {
   leaderboard(day: number): Promise<LeaderboardEntry[]>;
   postRun(run: RunPost): Promise<{ saved: boolean; test?: boolean; newItem?: { id: string; name: string } | null; outfit?: Outfit }>;
   wardrobe(playerId: string): Promise<Wardrobe>;
+  roster(): Promise<RosterEntry[]>;
   /** Put an item on a dog, or take the slot's item off with null. */
   setOutfitItem(playerId: string, dog: DogId, slot: Slot, item: string | null): Promise<Wardrobe>;
 }
@@ -110,6 +120,7 @@ export const api: Api = {
   leaderboard: async (day) => (await call<{ entries: LeaderboardEntry[] }>('GET', `/api/levels/${day}/leaderboard`)).entries,
   postRun: (run) => call('POST', '/api/runs', run),
   wardrobe: (playerId) => call('GET', `/api/players/${encodeURIComponent(playerId)}/wardrobe`),
+  roster: async () => (await call<{ players: RosterEntry[] }>('GET', '/api/roster')).players,
   setOutfitItem: (playerId, dog, slot, item) =>
     call('PUT', `/api/players/${encodeURIComponent(playerId)}/outfit`, { dog, slot, item }),
 };

@@ -4,6 +4,7 @@
 import { DOOR_ONE_SPEED } from '../constants.ts';
 import type { CourseLayout } from '../course.ts';
 import { christmasCourse } from './christmas.ts';
+import { warmupCourse } from './warmup.ts';
 
 export interface Level {
   day: number;
@@ -18,8 +19,16 @@ export const LEVELS: readonly Level[] = [
   { day: 1, name: 'Joulurata', speed: DOOR_ONE_SPEED, build: christmasCourse },
 ];
 
+/**
+ * The warm-up course. It has day 0 so it shares the doors' saving and
+ * leaderboards, but it is not a calendar door: it is always open and wins no
+ * item.
+ */
+export const WARMUP: Level = { day: 0, name: 'Lämmittelyrata', speed: DOOR_ONE_SPEED, build: warmupCourse };
+
+/** The level for a door, or the warm-up course for day 0. */
 export function levelForDay(day: number): Level | undefined {
-  return LEVELS.find((level) => level.day === day);
+  return day === WARMUP.day ? WARMUP : LEVELS.find((level) => level.day === day);
 }
 
 const cookieCounts = new Map<number, number>();

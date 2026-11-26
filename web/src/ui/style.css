@@ -362,3 +362,106 @@ input {
   cursor: pointer;
   padding: 8px;
 }
+
+.calendar-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.countdown {
+  margin: 0;
+  font-size: clamp(20px, 5vw, 26px);
+  text-align: center;
+  color: #fff;
+  text-shadow: 1px 1px 3px rgba(30, 58, 95, 0.6);
+}
+
+.warmup {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--green);
+  color: #fff;
+  font: inherit;
+  font-size: 20px;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(30, 58, 95, 0.25);
+}
+
+.warmup-name {
+  white-space: nowrap;
+}
+
+.warmup-note {
+  font-size: 15px;
+  opacity: 0.9;
+  text-align: right;
+}
+
+/* The first door glows while the calendar waits for December. */
+.door-next {
+  animation: door-glow 1.6s ease-in-out infinite alternate;
+}
+
+@keyframes door-glow {
+  from {
+    box-shadow: 0 0 4px 1px rgba(250, 204, 56, 0.4);
+  }
+  to {
+    box-shadow: 0 0 18px 6px rgba(250, 204, 56, 0.95);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .door-next {
+    animation: none;
+    box-shadow: 0 0 12px 4px rgba(250, 204, 56, 0.8);
+  }
+}
+
+.starting-line {
+  margin-top: 8px;
+  padding: 12px 14px 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.starting-line-title {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+
+.starting-line-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.starting-line-player {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.starting-line-dog {
+  width: 80px;
+}
+
+.starting-line-name {
+  font-size: 16px;
+}
+
+.starting-line-dog-name {
+  font-size: 13px;
+  opacity: 0.75;
+}

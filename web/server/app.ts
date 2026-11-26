@@ -4,7 +4,7 @@ import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
 import { type CalendarDate, DOOR_COUNT, FIRST_SEASON, doorStates, helsinkiDate, seasonOf } from '../shared/calendar.ts';
 import { STARTING_HEARTS } from '../shared/constants.ts';
-import { LEVELS, cookieCount, levelForDay } from '../shared/levels/registry.ts';
+import { LEVELS, WARMUP, cookieCount, levelForDay } from '../shared/levels/registry.ts';
 import { DOG_IDS, type DogId, cleanName, cleanPin, isDogId } from '../shared/profiles.ts';
 import { ITEMS, type Outfit, SLOTS, type Slot, itemById, itemForDay, resolveOutfit, unlockedItems } from '../shared/wardrobe.ts';
 import { score } from '../shared/score.ts';
@@ -131,14 +131,22 @@ export function createApp(options: AppOptions): Hono {
       state,
       best: best.get(i + 1) ?? null,
     }));
-    return c.json({ today, season, testMode, doors });
+    const warmupBest = playerId ? (store.bestScores(playerId, warmupSeason(today), testMode).get(WARMUP.day) ?? null) : null;
+    return c.json({ today, season, testMode, doors, warmup: { best: warmupBest } });
+  });
+
+  // Who has joined, with their dog as it is dressed, for the calendar's starting line.
+  app.get('/api/roster', (c) => {
+    const players = store.listPlayers().map((p) => ({ name: p.name, dog: p.dog, outfit: wardrobeOf(p.id, false).dogs[p.dog].outfit }));
+    return c.json({ players });
   });
 
   app.get('/api/levels/:day/leaderboard', (c) => {
     const day = Number(c.req.param('day'));
-    if (!Number.isInteger(day) || day < 1 || day > DOOR_COUNT) return c.json({ error: 'invalid-day' }, 400);
+    if (!Number.isInteger(day) || day < WARMUP.day || day > DOOR_COUNT) return c.json({ error: 'invalid-day' }, 400);
     const testMode = isTest(c.req.header('x-test-key'));
-    const season = seasonFor(helsinkiDate(now()), testMode);
+    const today = helsinkiDate(now());
+    const season = day === WARMUP.day ? warmupSeason(today) : seasonFor(today, testMode);
     return c.json({ day, entries: season === null ? [] : store.leaderboard(season, day, testMode) });
   });
 
@@ -152,8 +160,9 @@ export function createApp(options: AppOptions): Hono {
     const day = Number(body?.day);
     const level = levelForDay(day);
     const today = helsinkiDate(now());
-    const season = seasonFor(today, testMode);
-    if (!level || season === null || doorStates(today, released, testMode)[day - 1] !== 'open') {
+    const warmup = day === WARMUP.day;
+    const season = warmup ? warmupSeason(today) : seasonFor(today, testMode);
+    if (!level || season === null || (!warmup && doorStates(today, released, testMode)[day - 1] !== 'open')) {
       return c.json({ error: 'door-not-open' }, 400);
     }
 
@@ -167,7 +176,8 @@ export function createApp(options: AppOptions): Hono {
     const firstFinish = !(store.finishedDays(player.id, testMode).get(player.dog) ?? []).includes(day);
     store.addRun({ playerId: player.id, dog: player.dog, season, day, gingerbread, hearts, score: points, test: testMode });
     const best = store.bestScores(player.id, season, testMode).get(day) ?? points;
-    const won = firstFinish ? itemForDay(day) : undefined;
+    // The warm-up wins nothing; each door wins its own item.
+    const won = firstFinish && !warmup ? itemForDay(day) : undefined;
     // A newly won item goes straight on, in place of whatever was in its slot.
     if (won) store.setOutfitItem(player.id, player.dog, won.slot, won.id);
     const newItem = won ? { id: won.id, name: won.look(player.dog).name } : null;
@@ -201,6 +211,14 @@ export function createApp(options: AppOptions): Hono {
 /** The season results belong to. Test runs before the first December count towards the first season. */
 function seasonFor(today: CalendarDate, testMode: boolean): number | null {
   return seasonOf(today) ?? (testMode ? FIRST_SEASON : null);
+}
+
+/**
+ * The season warm-up results belong to: the calendar's own, or before the
+ * first December the coming one, so the warm-up can be played straight away.
+ */
+function warmupSeason(today: CalendarDate): number {
+  return seasonOf(today) ?? today.year;
 }
 
 /** The caller's address when the server runs on Node without a proxy in front. */

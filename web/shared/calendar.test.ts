@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type DoorState, doorStates, helsinkiDate, seasonOf } from './calendar.ts';
+import { type DoorState, doorStates, helsinkiDate, seasonOf, daysUntilFirstDoor } from './calendar.ts';
 
 const released = (...days: number[]) => new Set(days);
 const dec = (day: number, year = 2026) => ({ year, month: 12, day });
@@ -55,5 +55,14 @@ describe('seasons and dates', () => {
   it('uses the Finnish date, not UTC', () => {
     // 22:30 UTC on 30 November is already 1 December in Finland.
     expect(helsinkiDate(new Date('2026-11-30T22:30:00Z'))).toEqual(dec(1));
+  });
+});
+
+describe('countdown to the first door', () => {
+  it('counts the days to 1 December 2026 and stops once the calendar runs', () => {
+    expect(daysUntilFirstDoor({ year: 2026, month: 11, day: 26 })).toBe(5);
+    expect(daysUntilFirstDoor({ year: 2026, month: 11, day: 30 })).toBe(1);
+    expect(daysUntilFirstDoor({ year: 2026, month: 12, day: 1 })).toBeNull();
+    expect(daysUntilFirstDoor({ year: 2027, month: 3, day: 1 })).toBeNull();
   });
 });

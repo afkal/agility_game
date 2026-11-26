@@ -33,7 +33,7 @@ export class Hud {
       .setDepth(40)
       .setShadow(2, 2, '#2c4a70', 4);
     scene.add
-      .text(WORLD_WIDTH / 2, 40, `Luukku ${day} · ${name}`, { fontFamily: FONT, fontSize: '30px', color: '#ffffff' })
+      .text(WORLD_WIDTH / 2, 40, day === 0 ? name : `Luukku ${day} · ${name}`, { fontFamily: FONT, fontSize: '30px', color: '#ffffff' })
       .setOrigin(0.5)
       .setScrollFactor(0)
       .setDepth(40)
