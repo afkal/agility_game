@@ -30,7 +30,7 @@ export function resultSaver(api: Pick<Api, 'postRun'>, playerId: string) {
         hearts: result.hearts,
       });
       if (!res.saved) return { status: 'failed' };
-      return { status: res.test ? 'saved-test' : 'saved', newItem: res.newItem?.name };
+      return { status: res.test ? 'saved-test' : 'saved', newItem: res.newItem?.name, outfit: res.outfit };
     } catch {
       return { status: 'failed' };
     }

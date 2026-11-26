@@ -165,8 +165,11 @@ export function createApp(options: AppOptions): Hono {
     store.addRun({ playerId: player.id, dog: player.dog, season, day, gingerbread, hearts, score: points, test: testMode });
     const best = store.bestScores(player.id, season, testMode).get(day) ?? points;
     const won = firstFinish ? itemForDay(day) : undefined;
+    // A newly won item goes straight on, in place of whatever was in its slot.
+    if (won) store.setOutfitItem(player.id, player.dog, won.slot, won.id);
     const newItem = won ? { id: won.id, name: won.look(player.dog).name } : null;
-    return c.json({ saved: true, test: testMode, score: points, best, newItem });
+    const outfit = wardrobeOf(player.id, testMode).dogs[player.dog].outfit;
+    return c.json({ saved: true, test: testMode, score: points, best, newItem, outfit });
   });
 
   app.all('/api/*', (c) => c.json({ error: 'not-found' }, 404));

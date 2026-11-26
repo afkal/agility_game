@@ -40,7 +40,7 @@ export interface Api {
   updatePlayer(id: string, changes: { dog?: DogId; name?: string }): Promise<Player>;
   calendar(playerId: string): Promise<Calendar>;
   leaderboard(day: number): Promise<LeaderboardEntry[]>;
-  postRun(run: RunPost): Promise<{ saved: boolean; test?: boolean; newItem?: { id: string; name: string } | null }>;
+  postRun(run: RunPost): Promise<{ saved: boolean; test?: boolean; newItem?: { id: string; name: string } | null; outfit?: Outfit }>;
   wardrobe(playerId: string): Promise<Wardrobe>;
   /** Put an item on a dog, or take the slot's item off with null. */
   setOutfitItem(playerId: string, dog: DogId, slot: Slot, item: string | null): Promise<Wardrobe>;

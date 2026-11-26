@@ -137,7 +137,14 @@ describe('runs and leaderboards', () => {
     const { call, register } = setup(december(3));
     const player = await register('Timo');
     const res = await call('POST', '/api/runs', { playerId: player.id, day: 1, gingerbread: 23, hearts: 2, score: 99_999 });
-    expect(res.body).toEqual({ saved: true, test: false, score: 330, best: 330, newItem: { id: 'antlers', name: 'Poronsarvet' } });
+    expect(res.body).toEqual({
+      saved: true,
+      test: false,
+      score: 330,
+      best: 330,
+      newItem: { id: 'santa-hat', name: 'Tonttulakki' },
+      outfit: { neck: 'collar', head: 'santa-hat' },
+    });
   });
 
   it('rejects a run for a door that is not open', async () => {
@@ -189,37 +196,40 @@ describe('runs and leaderboards', () => {
 });
 
 describe('wardrobe', () => {
-  it('starts every dog in the scarf and Santa hat', async () => {
+  it('starts every dog in its collar', async () => {
     const { call, register } = setup(december(3));
     const player = await register('Timo');
     const { body } = await call('GET', `/api/players/${player.id}/wardrobe`);
-    expect(body.dogs.elmo).toEqual({ unlocked: ['scarf', 'santa-hat'], outfit: { neck: 'scarf', head: 'santa-hat' } });
-    expect(body.dogs.alma.outfit).toEqual({ neck: 'scarf', head: 'santa-hat' });
+    expect(body.dogs.elmo).toEqual({ unlocked: ['collar'], outfit: { neck: 'collar' } });
+    expect(body.dogs.alma.outfit).toEqual({ neck: 'collar' });
   });
 
-  it('wins a door item once, for the dog that finished it', async () => {
+  it('wins a door item once, for the dog that finished it, and puts it on', async () => {
     const { call, register, postRun } = setup(december(3));
     const player = await register('Timo', 'laku');
-    expect((await postRun(player.id, 5, 3)).body.newItem).toEqual({ id: 'antlers', name: 'Poronsarvet' });
+    const first = (await postRun(player.id, 5, 3)).body;
+    expect(first.newItem).toEqual({ id: 'santa-hat', name: 'Tonttulakki' });
+    expect(first.outfit).toEqual({ neck: 'collar', head: 'santa-hat' });
     expect((await postRun(player.id, 6, 3)).body.newItem).toBeNull();
     const { body } = await call('GET', `/api/players/${player.id}/wardrobe`);
-    expect(body.dogs.laku.unlocked).toContain('antlers');
-    expect(body.dogs.elmo.unlocked).not.toContain('antlers');
+    expect(body.dogs.laku.unlocked).toContain('santa-hat');
+    expect(body.dogs.elmo.unlocked).not.toContain('santa-hat');
 
     await call('PATCH', `/api/players/${player.id}`, { dog: 'alma' });
-    expect((await postRun(player.id, 5, 3)).body.newItem).toEqual({ id: 'antlers', name: 'Rusetti' });
+    expect((await postRun(player.id, 5, 3)).body.newItem).toEqual({ id: 'santa-hat', name: 'Tonttulakki' });
   });
 
-  it('dresses a dog only in items it has won, and can take items off', async () => {
+  it('dresses a dog only in items it has won, and keeps something on its neck', async () => {
     const { call, register, postRun } = setup(december(3));
     const player = await register('Timo');
     const put = (body: unknown) => call('PUT', `/api/players/${player.id}/outfit`, body);
-    expect((await put({ dog: 'elmo', slot: 'head', item: 'antlers' })).status).toBe(400);
+    expect((await put({ dog: 'elmo', slot: 'head', item: 'santa-hat' })).status).toBe(400);
     await postRun(player.id, 5, 3);
-    expect((await put({ dog: 'elmo', slot: 'neck', item: 'antlers' })).status).toBe(400);
-    expect((await put({ dog: 'elmo', slot: 'head', item: 'antlers' })).body.dogs.elmo.outfit).toEqual({ neck: 'scarf', head: 'antlers' });
-    expect((await put({ dog: 'elmo', slot: 'neck', item: null })).body.dogs.elmo.outfit).toEqual({ head: 'antlers' });
-    expect((await call('GET', `/api/players/${player.id}/wardrobe`)).body.dogs.laku.outfit).toEqual({ neck: 'scarf', head: 'santa-hat' });
+    expect((await put({ dog: 'elmo', slot: 'neck', item: 'santa-hat' })).status).toBe(400);
+    expect((await put({ dog: 'elmo', slot: 'head', item: null })).body.dogs.elmo.outfit).toEqual({ neck: 'collar' });
+    expect((await put({ dog: 'elmo', slot: 'neck', item: null })).body.dogs.elmo.outfit).toEqual({ neck: 'collar' });
+    expect((await put({ dog: 'elmo', slot: 'head', item: 'santa-hat' })).body.dogs.elmo.outfit).toEqual({ neck: 'collar', head: 'santa-hat' });
+    expect((await call('GET', `/api/players/${player.id}/wardrobe`)).body.dogs.laku.outfit).toEqual({ neck: 'collar' });
   });
 });
 

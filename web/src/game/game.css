@@ -158,13 +158,26 @@
 }
 
 .game-finish-prize {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin: 6px 0 0;
-  padding: 8px 16px;
+  padding: 4px 16px 4px 8px;
   border-radius: 14px;
-  background: rgba(250, 204, 56, 0.9);
+  background: rgba(250, 204, 56, 0.92);
   color: #1e3a5f;
   font-size: 18px;
   max-width: 34em;
+  text-align: left;
+}
+
+.game-finish-prize p {
+  margin: 0;
+}
+
+.game-prize-dog {
+  width: clamp(64px, 18vh, 110px);
+  flex: none;
 }
 
 .game-finish-prize[hidden] {

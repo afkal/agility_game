@@ -7,6 +7,7 @@ import type { Level } from '../../shared/levels/registry.ts';
 import type { DogId } from '../../shared/profiles.ts';
 import { score } from '../../shared/score.ts';
 import type { Outfit } from '../../shared/wardrobe.ts';
+import { dogPicture } from '../ui/dogPicture.ts';
 import { el } from '../dom.ts';
 import { dogLook } from './dogs.ts';
 import { PlayScene } from './PlayScene.ts';
@@ -25,6 +26,8 @@ export interface SaveOutcome {
   status: 'saved' | 'saved-test' | 'failed';
   /** Name of the item this run won for the dog, the first time it finishes the door. */
   newItem?: string;
+  /** The dog's outfit after the run, with a won item already on. */
+  outfit?: Outfit;
 }
 
 export interface StartGameOptions {
@@ -184,7 +187,7 @@ export function startGame(host: HTMLElement, options: StartGameOptions): GameHan
   function showFinish(result: RunResult): void {
     const dogName = dogLook(options.dogId).name;
     const status = el('p', 'game-finish-status', 'Tallennetaan tulosta…');
-    const prize = el('p', 'game-finish-prize');
+    const prize = el('div', 'game-finish-prize');
     prize.hidden = true;
     const again = el('button', 'game-button', 'Pelaa uudelleen');
     const toCalendar = el('button', 'game-button game-button-secondary', 'Takaisin kalenteriin');
@@ -204,9 +207,14 @@ export function startGame(host: HTMLElement, options: StartGameOptions): GameHan
     const save = async () => {
       status.textContent = 'Tallennetaan tulosta…';
       const outcome = await options.saveResult(result).catch((): SaveOutcome => ({ status: 'failed' }));
-      if (outcome.newItem) {
-        prize.textContent = `🎁 ${dogName} voitti uuden varusteen: ${outcome.newItem}! Puke se ylle kohdassa Koirat ja varusteet.`;
+      if (outcome.newItem && outcome.outfit) {
+        prize.replaceChildren(
+          dogPicture(options.dogId, outcome.outfit, 'game-prize-dog'),
+          el('p', '', `🎁 Uusi varuste: ${outcome.newItem}! ${dogName} puki sen heti ylleen.`),
+        );
         prize.hidden = false;
+        // The next try on this course already shows the new item.
+        scene.setOutfit(outcome.outfit);
       }
       if (outcome.status === 'saved') {
         status.textContent = 'Tulos tallennettu!';

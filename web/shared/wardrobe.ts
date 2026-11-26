@@ -1,6 +1,7 @@
 // The dogs' wardrobe: what each dog can wear and when it is won.
 //
-// Finishing a door's course with a dog wins that door's item for that dog, so
+// Every dog starts with a collar. Finishing a door's course with a dog wins
+// that door's item for that dog, and the dog puts it on straight away, so
 // running the same course again with another dog is worth it. Elmo and Laku
 // get the same items in their own colours; Alma gets her own, girlier ones.
 //
@@ -70,15 +71,27 @@ const scarf = (c: number): Shape[] => [
 
 export const ITEMS: readonly Item[] = [
   {
-    id: 'scarf',
+    id: 'collar',
     slot: 'neck',
     day: 0,
+    look: (dog) => ({
+      name: 'Kaulapanta',
+      shapes: [
+        { t: 'rect', x: 12, y: -20, w: 24, h: 5, r: 2.5, c: dog === 'alma' ? PINK : boys(dog, RED, GREEN) },
+        { t: 'circle', x: 24, y: -13.5, r: 2.5, c: GOLD },
+      ],
+    }),
+  },
+  {
+    id: 'scarf',
+    slot: 'neck',
+    day: 2,
     look: (dog) => ({ name: 'Kaulahuivi', shapes: scarf(dog === 'alma' ? PINK : boys(dog, RED, GREEN)) }),
   },
   {
     id: 'santa-hat',
     slot: 'head',
-    day: 0,
+    day: 1,
     look: (dog) => ({
       name: 'Tonttulakki',
       shapes: [
@@ -91,7 +104,7 @@ export const ITEMS: readonly Item[] = [
   {
     id: 'antlers',
     slot: 'head',
-    day: 1,
+    day: 3,
     look: (dog) =>
       dog === 'alma'
         ? {
@@ -115,7 +128,7 @@ export const ITEMS: readonly Item[] = [
   {
     id: 'bell-collar',
     slot: 'neck',
-    day: 2,
+    day: 4,
     look: (dog) =>
       dog === 'alma'
         ? {
@@ -134,7 +147,7 @@ export const ITEMS: readonly Item[] = [
   {
     id: 'cape',
     slot: 'back',
-    day: 3,
+    day: 5,
     look: (dog) =>
       dog === 'alma'
         ? {
@@ -155,7 +168,7 @@ export const ITEMS: readonly Item[] = [
   {
     id: 'elf-hat',
     slot: 'head',
-    day: 4,
+    day: 6,
     look: (dog) =>
       dog === 'alma'
         ? {
@@ -178,7 +191,7 @@ export const ITEMS: readonly Item[] = [
   {
     id: 'bow-tie',
     slot: 'neck',
-    day: 5,
+    day: 7,
     look: (dog) =>
       dog === 'alma'
         ? {
@@ -202,7 +215,7 @@ export const ITEMS: readonly Item[] = [
   {
     id: 'gift-bag',
     slot: 'back',
-    day: 6,
+    day: 8,
     look: (dog) =>
       dog === 'alma'
         ? {
@@ -225,7 +238,7 @@ export const ITEMS: readonly Item[] = [
   {
     id: 'star-band',
     slot: 'head',
-    day: 7,
+    day: 9,
     look: (dog) =>
       dog === 'alma'
         ? {
@@ -255,8 +268,14 @@ export function itemForDay(day: number): Item | undefined {
   return ITEMS.find((item) => item.day === day);
 }
 
-/** What every dog wears until it is changed: the starting scarf and hat. */
-export const DEFAULT_OUTFIT: Outfit = { neck: 'scarf', head: 'santa-hat' };
+/** What every dog wears until it is changed: its collar. */
+export const DEFAULT_OUTFIT: Outfit = { neck: 'collar' };
+
+/**
+ * A dog always wears something on its neck: the colour there is what tells
+ * black Elmo and Laku apart in the game.
+ */
+export const ALWAYS_WORN: Slot = 'neck';
 
 /** Item ids a dog has, given the doors it has finished. */
 export function unlockedItems(finishedDays: Iterable<number>): string[] {
@@ -275,7 +294,7 @@ export function resolveOutfit(stored: Outfit, unlocked: readonly string[]): Outf
   const outfit: Outfit = {};
   for (const slot of SLOTS) {
     const choice = stored[slot];
-    if (choice === '') continue;
+    if (choice === '' && slot !== ALWAYS_WORN) continue;
     const item = available(choice, slot) ? choice : DEFAULT_OUTFIT[slot];
     if (available(item, slot)) outfit[slot] = item;
   }

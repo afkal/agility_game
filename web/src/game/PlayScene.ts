@@ -69,6 +69,7 @@ export class PlayScene extends Phaser.Scene {
   private snowballImages: Phaser.GameObjects.Image[] = [];
   private dog!: Phaser.GameObjects.Container;
   private dogPicture!: Phaser.GameObjects.Container;
+  private outfitGraphics!: Phaser.GameObjects.Graphics;
   private tilt = 0;
   private stride = 0;
   private lastDogX: number | null = null;
@@ -113,6 +114,12 @@ export class PlayScene extends Phaser.Scene {
         this.jumpQueued = true;
       });
     }
+  }
+
+  /** Dress the dog in a new outfit, such as one with a just-won item. */
+  setOutfit(outfit: Outfit): void {
+    this.outfitGraphics.clear();
+    drawOutfit(this.outfitGraphics, outfitShapes(outfit, this.options.dogId));
   }
 
   /** Start the level again from the beginning. */
@@ -206,9 +213,9 @@ export class PlayScene extends Phaser.Scene {
   private createDog(): void {
     const look = dogLook(this.options.dogId);
     const picture = this.add.image(0, 0, look.texture).setDisplaySize(DOG_PICTURE_SIZE, DOG_PICTURE_SIZE);
-    const extras = this.add.graphics();
-    drawOutfit(extras, outfitShapes(this.options.outfit, this.options.dogId));
-    this.dogPicture = this.add.container(0, -2, [picture, extras]);
+    this.outfitGraphics = this.add.graphics();
+    drawOutfit(this.outfitGraphics, outfitShapes(this.options.outfit, this.options.dogId));
+    this.dogPicture = this.add.container(0, -2, [picture, this.outfitGraphics]);
     this.dog = this.add.container(0, 0, [this.dogPicture]).setDepth(10);
   }
 

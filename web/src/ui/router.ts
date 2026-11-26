@@ -2,7 +2,7 @@
 
 import type { Api, Calendar, Player, Wardrobe } from '../api.ts';
 import { DOG_IDS, type DogId } from '../../shared/profiles.ts';
-import { DEFAULT_OUTFIT, ITEMS, type Outfit, SLOTS, SLOT_NAMES } from '../../shared/wardrobe.ts';
+import { ALWAYS_WORN, DEFAULT_OUTFIT, ITEMS, type Outfit, SLOTS, SLOT_NAMES } from '../../shared/wardrobe.ts';
 import { dogLook } from '../game/dogs.ts';
 import { dogPicture } from './dogPicture.ts';
 import type { DoorState } from '../../shared/calendar.ts';
@@ -177,8 +177,8 @@ export class App {
             error.textContent = 'Yhteys palvelimeen ei onnistunut. Yritä uudelleen.';
           }
         };
-        const none = button(`item-chip${outfit[slot] ? '' : ' chosen'}`, 'Ei mitään', () => void choose(null));
-        items.append(none);
+        // The neck always has something on, so Elmo and Laku stay told apart.
+        if (slot !== ALWAYS_WORN) items.append(button(`item-chip${outfit[slot] ? '' : ' chosen'}`, 'Ei mitään', () => void choose(null)));
         for (const item of ITEMS.filter((i) => i.slot === slot)) {
           const owned = unlocked.includes(item.id);
           const label = owned ? item.look(dog).name : `🔒 Luukku ${item.day}`;
@@ -194,7 +194,7 @@ export class App {
 
     screen.append(
       el('h1', 'title', 'Koirat ja varusteet'),
-      el('p', 'lead', 'Valitse koira, jolla pelaat. Jokainen koira voittaa luukun varusteen, kun se juoksee radan maaliin.'),
+      el('p', 'lead', 'Valitse koira, jolla pelaat. Jokainen koira voittaa luukun varusteen ja pukee sen heti ylleen, kun se juoksee radan maaliin. Täällä voit vaihtaa varusteita.'),
       cards.node,
       closet,
       error,
