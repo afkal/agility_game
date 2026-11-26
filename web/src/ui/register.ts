@@ -3,7 +3,7 @@
 
 import { DEFAULT_DOG, type DogId, MAX_NAME_LENGTH, PIN_LENGTH, cleanName, cleanPin } from '../../shared/profiles.ts';
 import { dogCards } from './dogCards.ts';
-import { button, el } from '../dom.ts';
+import { el } from '../dom.ts';
 
 export interface RegisterActions {
   /** Resolves false when no player has the code. */
@@ -87,19 +87,6 @@ function pinInput(): HTMLInputElement {
   input.placeholder = '123456';
   input.enterKeyHint = 'go';
   return input;
-}
-
-/** Shown once after creating a player: the code to write down. */
-export function welcomeScreen(name: string, pin: string, onContinue: () => void): HTMLElement {
-  const screen = el('div', 'screen');
-  screen.append(
-    el('h1', 'title', `Tervetuloa, ${name}!`),
-    el('p', 'lead', 'Tämä on PIN-koodisi. Kirjoita se muistiin: sillä pääset jatkamaan omilla tuloksillasi toisella puhelimella tai koneella.'),
-    el('p', 'pin-code', formatPin(pin)),
-    el('p', 'lead', 'Näet koodin myöhemmin myös kalenterin kohdasta Oma pelaaja.'),
-    button('primary', 'Selvä, kalenteriin!', onContinue),
-  );
-  return screen;
 }
 
 export function formatPin(pin: string): string {

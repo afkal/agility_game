@@ -12,7 +12,7 @@ import { dogCards } from './dogCards.ts';
 import { doorCard } from './doorCard.ts';
 import { button, el } from '../dom.ts';
 import { firstScreen, resultSaver } from './flow.ts';
-import { formatPin, registerScreen, welcomeScreen } from './register.ts';
+import { formatPin, registerScreen } from './register.ts';
 import { MAX_NAME_LENGTH, cleanName } from '../../shared/profiles.ts';
 
 const PLAYER_STORAGE = 'agility-camp.player';
@@ -91,7 +91,7 @@ export class App {
           const player = await this.api.register(name, dog);
           this.player = player;
           storePlayerId(player.id);
-          this.show(welcomeScreen(player.name, player.pin, () => void this.showCalendar()));
+          await this.showCalendar();
         },
       }),
     );
