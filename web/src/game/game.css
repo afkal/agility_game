@@ -156,3 +156,17 @@
 .game-back[hidden] {
   display: none;
 }
+
+.game-finish-prize {
+  margin: 6px 0 0;
+  padding: 8px 16px;
+  border-radius: 14px;
+  background: rgba(250, 204, 56, 0.9);
+  color: #1e3a5f;
+  font-size: 18px;
+  max-width: 34em;
+}
+
+.game-finish-prize[hidden] {
+  display: none;
+}

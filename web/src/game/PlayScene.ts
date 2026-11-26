@@ -9,13 +9,16 @@ import type { Level } from '../../shared/levels/registry.ts';
 import type { DogId } from '../../shared/profiles.ts';
 import { leftEdge } from '../../shared/player.ts';
 import * as art from './art.ts';
-import { addWhiteDogTexture, dogLook } from './dogs.ts';
+import { addWhiteDogTexture, dogLook, drawOutfit } from './dogs.ts';
+import { type Outfit, outfitShapes } from '../../shared/wardrobe.ts';
 import { Hud } from './hud.ts';
 import { Snow } from './snow.ts';
 
 export interface PlaySceneOptions {
   level: Level;
   dogId: DogId;
+  /** What the dog wears. */
+  outfit: Outfit;
   /** True while the run should stand still, such as with the phone upright. */
   isPaused: () => boolean;
   onFinish: (gingerbread: number, hearts: number) => void;
@@ -197,16 +200,7 @@ export class PlayScene extends Phaser.Scene {
     const look = dogLook(this.options.dogId);
     const picture = this.add.image(0, 0, look.texture).setDisplaySize(DOG_PICTURE_SIZE, DOG_PICTURE_SIZE);
     const extras = this.add.graphics();
-    extras.fillStyle(look.scarf, 1);
-    extras.fillRoundedRect(12, -22, 24, 9, 4);
-    extras.fillTriangle(14, -18, 4, -6, 10, -4);
-    const bx = 31;
-    const by = -32;
-    extras.fillStyle(art.CANDY_RED, 1);
-    extras.fillTriangle(bx - 10, by, bx + 10, by - 1, bx - 15, by - 21);
-    extras.fillStyle(art.SNOW_WHITE, 1);
-    extras.fillRoundedRect(bx - 11.5, by - 3.5, 23, 7, 3.5);
-    extras.fillCircle(bx - 16, by - 21, 4.5);
+    drawOutfit(extras, outfitShapes(this.options.outfit, this.options.dogId));
     this.dogPicture = this.add.container(0, -2, [picture, extras]);
     this.dog = this.add.container(0, 0, [this.dogPicture]).setDepth(10);
   }

@@ -29,10 +29,10 @@ export function resultSaver(api: Pick<Api, 'postRun'>, playerId: string) {
         gingerbread: result.gingerbread,
         hearts: result.hearts,
       });
-      if (!res.saved) return 'failed';
-      return res.test ? 'saved-test' : 'saved';
+      if (!res.saved) return { status: 'failed' };
+      return { status: res.test ? 'saved-test' : 'saved', newItem: res.newItem?.name };
     } catch {
-      return 'failed';
+      return { status: 'failed' };
     }
   };
 }

@@ -6,6 +6,7 @@ import { WORLD_WIDTH } from '../../shared/constants.ts';
 import type { Level } from '../../shared/levels/registry.ts';
 import type { DogId } from '../../shared/profiles.ts';
 import { score } from '../../shared/score.ts';
+import type { Outfit } from '../../shared/wardrobe.ts';
 import { el } from '../dom.ts';
 import { dogLook } from './dogs.ts';
 import { PlayScene } from './PlayScene.ts';
@@ -20,11 +21,16 @@ export interface RunResult {
 }
 
 /** What happened to a finished run's result. */
-export type SaveOutcome = 'saved' | 'saved-test' | 'failed';
+export interface SaveOutcome {
+  status: 'saved' | 'saved-test' | 'failed';
+  /** Name of the item this run won for the dog, the first time it finishes the door. */
+  newItem?: string;
+}
 
 export interface StartGameOptions {
   level: Level;
   dogId: DogId;
+  outfit: Outfit;
   /** Called when the dog reaches the finish; resolves when saving is done. */
   saveResult: (result: RunResult) => Promise<SaveOutcome>;
   /** Called when the player leaves for the calendar. */
@@ -62,6 +68,7 @@ export function startGame(host: HTMLElement, options: StartGameOptions): GameHan
   const scene = new PlayScene({
     level: options.level,
     dogId: options.dogId,
+    outfit: options.outfit,
     isPaused: () => portrait.matches || !finish.hidden || !pauseScreen.hidden || !countdown.hidden,
     onFinish: (gingerbread, hearts) => {
       finishedAt = performance.now();
@@ -177,6 +184,8 @@ export function startGame(host: HTMLElement, options: StartGameOptions): GameHan
   function showFinish(result: RunResult): void {
     const dogName = dogLook(options.dogId).name;
     const status = el('p', 'game-finish-status', 'Tallennetaan tulosta…');
+    const prize = el('p', 'game-finish-prize');
+    prize.hidden = true;
     const again = el('button', 'game-button', 'Pelaa uudelleen');
     const toCalendar = el('button', 'game-button game-button-secondary', 'Takaisin kalenteriin');
     const buttons = el('div', 'game-finish-buttons');
@@ -185,6 +194,7 @@ export function startGame(host: HTMLElement, options: StartGameOptions): GameHan
       el('h2', 'game-finish-title', `Hienoa, ${dogName}!`),
       el('p', 'game-finish-score', `${result.gingerbread} piparia · ${result.hearts} ${result.hearts === 1 ? 'sydän' : 'sydäntä'}`),
       el('p', 'game-finish-points', `${result.score} pistettä`),
+      prize,
       status,
       buttons,
     );
@@ -193,10 +203,14 @@ export function startGame(host: HTMLElement, options: StartGameOptions): GameHan
 
     const save = async () => {
       status.textContent = 'Tallennetaan tulosta…';
-      const outcome = await options.saveResult(result).catch((): SaveOutcome => 'failed');
-      if (outcome === 'saved') {
+      const outcome = await options.saveResult(result).catch((): SaveOutcome => ({ status: 'failed' }));
+      if (outcome.newItem) {
+        prize.textContent = `🎁 ${dogName} voitti uuden varusteen: ${outcome.newItem}! Puke se ylle kohdassa Koirat ja varusteet.`;
+        prize.hidden = false;
+      }
+      if (outcome.status === 'saved') {
         status.textContent = 'Tulos tallennettu!';
-      } else if (outcome === 'saved-test') {
+      } else if (outcome.status === 'saved-test') {
         status.textContent = 'Testitulos tallennettu testilistalle.';
       } else {
         status.textContent = 'Tulosta ei saatu tallennettua. ';

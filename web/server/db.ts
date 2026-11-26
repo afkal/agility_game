@@ -4,9 +4,12 @@
 import { randomInt, randomUUID } from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
 import { type DogId, type LeaderboardEntry, PIN_LENGTH, type Player } from '../shared/profiles.ts';
+import type { Outfit, Slot } from '../shared/wardrobe.ts';
 
 export interface RunRecord {
   playerId: string;
+  /** The dog that ran; finishing a door with a dog wins that door's item for it. */
+  dog: DogId;
   season: number;
   day: number;
   gingerbread: number;
@@ -40,10 +43,21 @@ export class Store {
         hearts INTEGER NOT NULL,
         score INTEGER NOT NULL,
         test INTEGER NOT NULL DEFAULT 0,
+        dog TEXT,
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
       CREATE INDEX IF NOT EXISTS runs_by_level ON runs (season, day);
+      CREATE TABLE IF NOT EXISTS outfits (
+        player_id TEXT NOT NULL REFERENCES players(id),
+        dog TEXT NOT NULL,
+        slot TEXT NOT NULL,
+        item TEXT NOT NULL,
+        PRIMARY KEY (player_id, dog, slot)
+      );
     `);
+    // Runs from before the wardrobe did not record the dog.
+    const runColumns = this.db.prepare("SELECT name FROM pragma_table_info('runs')").all() as { name: string }[];
+    if (!runColumns.some((c) => c.name === 'dog')) this.db.exec('ALTER TABLE runs ADD COLUMN dog TEXT;');
   }
 
   /**
@@ -127,8 +141,34 @@ export class Store {
 
   addRun(run: RunRecord): void {
     this.db
-      .prepare('INSERT INTO runs (player_id, season, day, gingerbread, hearts, score, test) VALUES (?, ?, ?, ?, ?, ?, ?)')
-      .run(run.playerId, run.season, run.day, run.gingerbread, run.hearts, run.score, run.test ? 1 : 0);
+      .prepare('INSERT INTO runs (player_id, season, day, gingerbread, hearts, score, test, dog) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+      .run(run.playerId, run.season, run.day, run.gingerbread, run.hearts, run.score, run.test ? 1 : 0, run.dog);
+  }
+
+  /** Doors each of the player's dogs has finished, in any season, from real or from test runs. */
+  finishedDays(playerId: string, test = false): Map<DogId, number[]> {
+    const rows = this.db
+      .prepare('SELECT DISTINCT dog, day FROM runs WHERE player_id = ? AND test = ? AND dog IS NOT NULL')
+      .all(playerId, test ? 1 : 0) as { dog: DogId; day: number }[];
+    const days = new Map<DogId, number[]>();
+    for (const row of rows) days.set(row.dog, [...(days.get(row.dog) ?? []), row.day]);
+    return days;
+  }
+
+  /** The outfit choices stored for one of the player's dogs; slots never changed are missing. */
+  storedOutfit(playerId: string, dog: DogId): Outfit {
+    const rows = this.db.prepare('SELECT slot, item FROM outfits WHERE player_id = ? AND dog = ?').all(playerId, dog) as {
+      slot: Slot;
+      item: string;
+    }[];
+    return Object.fromEntries(rows.map((r) => [r.slot, r.item]));
+  }
+
+  /** Dress a dog: `item` in `slot`, or an empty string for nothing there. */
+  setOutfitItem(playerId: string, dog: DogId, slot: Slot, item: string): void {
+    this.db
+      .prepare('INSERT INTO outfits (player_id, dog, slot, item) VALUES (?, ?, ?, ?) ON CONFLICT (player_id, dog, slot) DO UPDATE SET item = excluded.item')
+      .run(playerId, dog, slot, item);
   }
 
   /** The player's best score per day in the season, from real or from test runs. */

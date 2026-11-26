@@ -5,7 +5,8 @@ import { Hono } from 'hono';
 import { type CalendarDate, DOOR_COUNT, FIRST_SEASON, doorStates, helsinkiDate, seasonOf } from '../shared/calendar.ts';
 import { STARTING_HEARTS } from '../shared/constants.ts';
 import { LEVELS, cookieCount, levelForDay } from '../shared/levels/registry.ts';
-import { cleanName, cleanPin, isDogId } from '../shared/profiles.ts';
+import { DOG_IDS, type DogId, cleanName, cleanPin, isDogId } from '../shared/profiles.ts';
+import { type Outfit, SLOTS, type Slot, itemById, itemForDay, resolveOutfit, unlockedItems } from '../shared/wardrobe.ts';
 import { score } from '../shared/score.ts';
 import type { Store } from './db.ts';
 
@@ -79,6 +80,43 @@ export function createApp(options: AppOptions): Hono {
     return c.json(store.getPlayer(id));
   });
 
+  /** Every dog's items and current outfit for the player. */
+  const wardrobeOf = (playerId: string, testMode: boolean) => {
+    const finished = store.finishedDays(playerId, testMode);
+    const dogs = {} as Record<DogId, { unlocked: string[]; outfit: Outfit }>;
+    for (const dog of DOG_IDS) {
+      const unlocked = unlockedItems(finished.get(dog) ?? []);
+      dogs[dog] = { unlocked, outfit: resolveOutfit(store.storedOutfit(playerId, dog), unlocked) };
+    }
+    return { dogs };
+  };
+
+  app.get('/api/players/:id/wardrobe', (c) => {
+    const id = c.req.param('id');
+    if (!store.getPlayer(id)) return c.json({ error: 'not-found' }, 404);
+    return c.json(wardrobeOf(id, isTest(c.req.header('x-test-key'))));
+  });
+
+  // Put an item on a dog, or take a slot's item off with `item: null`.
+  app.put('/api/players/:id/outfit', async (c) => {
+    const id = c.req.param('id');
+    if (!store.getPlayer(id)) return c.json({ error: 'not-found' }, 404);
+    const body = await c.req.json().catch(() => null);
+    const dog = body?.dog;
+    const slot = body?.slot as Slot;
+    const item = body?.item ?? null;
+    if (!isDogId(dog) || !(SLOTS as readonly string[]).includes(slot)) return c.json({ error: 'invalid-outfit' }, 400);
+    const testMode = isTest(c.req.header('x-test-key'));
+    if (item !== null) {
+      const unlocked = unlockedItems(store.finishedDays(id, testMode).get(dog) ?? []);
+      if (typeof item !== 'string' || itemById(item)?.slot !== slot || !unlocked.includes(item)) {
+        return c.json({ error: 'item-not-available' }, 400);
+      }
+    }
+    store.setOutfitItem(id, dog, slot, item ?? '');
+    return c.json(wardrobeOf(id, testMode));
+  });
+
   app.get('/api/calendar', (c) => {
     const today = helsinkiDate(now());
     const testMode = isTest(c.req.header('x-test-key'));
@@ -122,9 +160,13 @@ export function createApp(options: AppOptions): Hono {
     if (!validCookies || !validHearts) return c.json({ error: 'invalid-run' }, 400);
 
     const points = score(gingerbread, hearts);
-    store.addRun({ playerId: player.id, season, day, gingerbread, hearts, score: points, test: testMode });
+    // The dog is the one the player has chosen, as the game runs with it.
+    const firstFinish = !(store.finishedDays(player.id, testMode).get(player.dog) ?? []).includes(day);
+    store.addRun({ playerId: player.id, dog: player.dog, season, day, gingerbread, hearts, score: points, test: testMode });
     const best = store.bestScores(player.id, season, testMode).get(day) ?? points;
-    return c.json({ saved: true, test: testMode, score: points, best });
+    const won = firstFinish ? itemForDay(day) : undefined;
+    const newItem = won ? { id: won.id, name: won.look(player.dog).name } : null;
+    return c.json({ saved: true, test: testMode, score: points, best, newItem });
   });
 
   app.all('/api/*', (c) => c.json({ error: 'not-found' }, 404));

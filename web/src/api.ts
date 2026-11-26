@@ -3,6 +3,7 @@
 
 import type { CalendarDate, DoorState } from '../shared/calendar.ts';
 import type { DogId, LeaderboardEntry, Player } from '../shared/profiles.ts';
+import type { Outfit, Slot } from '../shared/wardrobe.ts';
 
 export type { LeaderboardEntry, Player };
 
@@ -17,6 +18,11 @@ export interface Calendar {
   season: number | null;
   testMode: boolean;
   doors: CalendarDoor[];
+}
+
+/** For each dog: the items it has won and what it wears. */
+export interface Wardrobe {
+  dogs: Record<DogId, { unlocked: string[]; outfit: Outfit }>;
 }
 
 export interface RunPost {
@@ -34,7 +40,10 @@ export interface Api {
   updatePlayer(id: string, changes: { dog?: DogId; name?: string }): Promise<Player>;
   calendar(playerId: string): Promise<Calendar>;
   leaderboard(day: number): Promise<LeaderboardEntry[]>;
-  postRun(run: RunPost): Promise<{ saved: boolean; test?: boolean }>;
+  postRun(run: RunPost): Promise<{ saved: boolean; test?: boolean; newItem?: { id: string; name: string } | null }>;
+  wardrobe(playerId: string): Promise<Wardrobe>;
+  /** Put an item on a dog, or take the slot's item off with null. */
+  setOutfitItem(playerId: string, dog: DogId, slot: Slot, item: string | null): Promise<Wardrobe>;
 }
 
 const TEST_KEY_STORAGE = 'agility-camp.test-key';
@@ -100,4 +109,7 @@ export const api: Api = {
   calendar: (playerId) => call('GET', `/api/calendar?player=${encodeURIComponent(playerId)}`),
   leaderboard: async (day) => (await call<{ entries: LeaderboardEntry[] }>('GET', `/api/levels/${day}/leaderboard`)).entries,
   postRun: (run) => call('POST', '/api/runs', run),
+  wardrobe: (playerId) => call('GET', `/api/players/${encodeURIComponent(playerId)}/wardrobe`),
+  setOutfitItem: (playerId, dog, slot, item) =>
+    call('PUT', `/api/players/${encodeURIComponent(playerId)}/outfit`, { dog, slot, item }),
 };

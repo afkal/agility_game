@@ -1,6 +1,10 @@
 // Moves between registration, the calendar, a door's card and play.
 
-import type { Api, Calendar, Player } from '../api.ts';
+import type { Api, Calendar, Player, Wardrobe } from '../api.ts';
+import { DOG_IDS, type DogId } from '../../shared/profiles.ts';
+import { DEFAULT_OUTFIT, ITEMS, type Outfit, SLOTS, SLOT_NAMES } from '../../shared/wardrobe.ts';
+import { dogLook } from '../game/dogs.ts';
+import { dogPicture } from './dogPicture.ts';
 import type { DoorState } from '../../shared/calendar.ts';
 import { levelForDay } from '../../shared/levels/registry.ts';
 import { calendarScreen } from './calendar.ts';
@@ -35,6 +39,7 @@ export class App {
   private readonly api: Api;
   private player: Player | null = null;
   private calendar: Calendar | null = null;
+  private wardrobe: Wardrobe | null = null;
   /** Changes whenever the screen changes, so late async results can tell they are stale. */
   private screen = 0;
   private doorLoading = false;
@@ -134,24 +139,73 @@ export class App {
     this.show(screen);
   }
 
-  private showDogChoice(): void {
+  /** Choose the dog to play with, and dress each dog in the items it has won. */
+  private async showDogs(): Promise<void> {
     const player = this.player!;
+    const screenToken = this.screen;
+    let wardrobe: Wardrobe;
+    try {
+      wardrobe = await this.api.wardrobe(player.id);
+    } catch {
+      this.showError(() => void this.showDogs());
+      return;
+    }
+    if (screenToken !== this.screen) return;
+    this.wardrobe = wardrobe;
+
     const screen = el('div', 'screen');
-    const cards = dogCards(player.dog);
     const error = el('p', 'form-error');
+    const closet = el('div', 'wardrobe');
+    const outfits = Object.fromEntries(DOG_IDS.map((dog) => [dog, wardrobe.dogs[dog].outfit])) as Record<DogId, Outfit>;
+    const cards = dogCards(player.dog, outfits, (dog) => drawCloset(dog));
+
+    const drawCloset = (dog: DogId) => {
+      const { unlocked, outfit } = wardrobe.dogs[dog];
+      closet.replaceChildren(el('h2', 'field-label', `${dogLook(dog).name}n vaatekaappi`), dogPicture(dog, outfit, 'dog-preview'));
+      // Listed from the head down; drawn from the back up, so the head goes on top.
+      for (const slot of [...SLOTS].reverse()) {
+        const row = el('div', 'wardrobe-slot');
+        const items = el('div', 'wardrobe-items');
+        const choose = async (item: string | null) => {
+          try {
+            wardrobe = await this.api.setOutfitItem(player.id, dog, slot, item);
+            this.wardrobe = wardrobe;
+            error.textContent = '';
+            cards.redraw(dog, wardrobe.dogs[dog].outfit);
+            drawCloset(dog);
+          } catch {
+            error.textContent = 'Yhteys palvelimeen ei onnistunut. Yritä uudelleen.';
+          }
+        };
+        const none = button(`item-chip${outfit[slot] ? '' : ' chosen'}`, 'Ei mitään', () => void choose(null));
+        items.append(none);
+        for (const item of ITEMS.filter((i) => i.slot === slot)) {
+          const owned = unlocked.includes(item.id);
+          const label = owned ? item.look(dog).name : `🔒 Luukku ${item.day}`;
+          const chip = button(`item-chip${outfit[slot] === item.id ? ' chosen' : ''}`, label, () => void choose(item.id));
+          chip.disabled = !owned;
+          items.append(chip);
+        }
+        row.append(el('h2', '', SLOT_NAMES[slot]), items);
+        closet.append(row);
+      }
+    };
+    drawCloset(player.dog);
+
     screen.append(
-      el('h1', 'title', 'Valitse koira'),
+      el('h1', 'title', 'Koirat ja varusteet'),
+      el('p', 'lead', 'Valitse koira, jolla pelaat. Jokainen koira voittaa luukun varusteen, kun se juoksee radan maaliin.'),
       cards.node,
+      closet,
       error,
       button('primary', 'Valmis', async () => {
         try {
-          this.player = await this.api.updatePlayer(player.id, { dog: cards.value() });
+          if (cards.value() !== player.dog) this.player = await this.api.updatePlayer(player.id, { dog: cards.value() });
           await this.showCalendar();
         } catch {
           error.textContent = 'Yhteys palvelimeen ei onnistunut. Yritä uudelleen.';
         }
       }),
-      button('secondary', 'Peruuta', () => void this.showCalendar()),
     );
     this.show(screen);
   }
@@ -159,7 +213,13 @@ export class App {
   private async showCalendar(): Promise<void> {
     const player = this.player!;
     try {
-      this.calendar = await this.api.calendar(player.id);
+      // The outfit is only decoration: without it the dog plays in its starting outfit.
+      const [calendar, wardrobe] = await Promise.all([
+        this.api.calendar(player.id),
+        this.api.wardrobe(player.id).catch(() => null),
+      ]);
+      this.calendar = calendar;
+      this.wardrobe = wardrobe;
     } catch {
       this.showError(() => void this.showCalendar());
       return;
@@ -167,7 +227,7 @@ export class App {
     this.show(
       calendarScreen(player.name, player.dog, this.calendar, {
         openDoor: (day, state) => void this.openDoor(day, state),
-        changeDog: () => this.showDogChoice(),
+        changeDog: () => void this.showDogs(),
         showProfile: () => this.showProfile(),
       }),
     );
@@ -202,6 +262,7 @@ export class App {
       startGame(host, {
         level,
         dogId: player.dog,
+        outfit: this.wardrobe?.dogs[player.dog].outfit ?? DEFAULT_OUTFIT,
         saveResult: resultSaver(this.api, player.id),
         onExit: () => void this.showCalendar(),
       });

@@ -22,7 +22,7 @@ export function calendarScreen(playerName: string, dog: DogId, calendar: Calenda
     el('p', 'who', `${playerName} ja ${dogLook(dog).name}`),
   );
   const tools = el('div', 'calendar-tools');
-  tools.append(button('small', 'Vaihda koira', actions.changeDog), button('small', 'Oma pelaaja', actions.showProfile));
+  tools.append(button('small', 'Koirat ja varusteet', actions.changeDog), button('small', 'Oma pelaaja', actions.showProfile));
   header.append(tools);
   if (calendar.testMode) header.append(el('p', 'test-badge', 'testitila'));
 

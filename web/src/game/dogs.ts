@@ -1,20 +1,47 @@
 // The three dogs share one schnauzer silhouette. Elmo and Laku are black and
-// told apart by their scarves; Alma is white.
+// told apart by their outfits' colours; Alma is white.
 
 import type Phaser from 'phaser';
 import { DEFAULT_DOG, type DogId, isDogId } from '../../shared/profiles.ts';
+import type { Shape } from '../../shared/wardrobe.ts';
 
 export interface DogLook {
   name: string;
   texture: 'dog-black' | 'dog-white';
-  scarf: number;
 }
 
 const LOOKS: Record<DogId, DogLook> = {
-  elmo: { name: 'Elmo', texture: 'dog-black', scarf: 0xd91f29 },
-  laku: { name: 'Laku', texture: 'dog-black', scarf: 0x1a9a50 },
-  alma: { name: 'Alma', texture: 'dog-white', scarf: 0x3b6fd8 },
+  elmo: { name: 'Elmo', texture: 'dog-black' },
+  laku: { name: 'Laku', texture: 'dog-black' },
+  alma: { name: 'Alma', texture: 'dog-white' },
 };
+
+/** Draw outfit shapes, given in the dog picture's own coordinates. */
+export function drawOutfit(g: Phaser.GameObjects.Graphics, shapes: readonly Shape[]): void {
+  for (const s of shapes) {
+    if (s.t === 'line') {
+      g.lineStyle(s.w, s.c, 1);
+      g.beginPath();
+      g.moveTo(s.p[0]!, s.p[1]!);
+      for (let i = 2; i < s.p.length; i += 2) g.lineTo(s.p[i]!, s.p[i + 1]!);
+      g.strokePath();
+      continue;
+    }
+    g.fillStyle(s.c, s.a ?? 1);
+    if (s.t === 'rect') {
+      if (s.r) g.fillRoundedRect(s.x, s.y, s.w, s.h, s.r);
+      else g.fillRect(s.x, s.y, s.w, s.h);
+    } else if (s.t === 'circle') {
+      g.fillCircle(s.x, s.y, s.r);
+    } else if (s.t === 'ellipse') {
+      g.fillEllipse(s.x, s.y, s.w, s.h);
+    } else {
+      const points = [];
+      for (let i = 0; i < s.p.length; i += 2) points.push({ x: s.p[i]!, y: s.p[i + 1]! });
+      g.fillPoints(points as Phaser.Math.Vector2[], true);
+    }
+  }
+}
 
 /** How a dog looks; an unknown id falls back to Elmo. */
 export function dogLook(id: unknown): DogLook {

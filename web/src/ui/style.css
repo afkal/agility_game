@@ -145,10 +145,47 @@ input {
   filter: invert(1) drop-shadow(0 0 2px #4a5a72) drop-shadow(0 0 1px #4a5a72);
 }
 
-.dog-scarf {
-  width: 40px;
-  height: 8px;
-  border-radius: 4px;
+.dog-preview {
+  display: block;
+  width: min(220px, 60vw);
+  margin: 0 auto;
+}
+
+.wardrobe-slot {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wardrobe-slot h2 {
+  margin: 4px 0 0;
+  font-size: 18px;
+}
+
+.wardrobe-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.item-chip {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--night);
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.item-chip.chosen {
+  border-color: var(--red);
+  background: #fff;
+}
+
+.item-chip:disabled {
+  cursor: default;
+  opacity: 0.55;
 }
 
 .dog-name {
