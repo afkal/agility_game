@@ -3,8 +3,11 @@
 
 import { DOOR_ONE_SPEED } from '../constants.ts';
 import type { CourseLayout } from '../course.ts';
-import { christmasCourse } from './christmas.ts';
+import { door1, door2, door3, door4, door5, door6, door7 } from './week1.ts';
 import { warmupCourse } from './warmup.ts';
+
+/** A level's look beyond the course itself. */
+export type Mood = 'christmas' | 'finnish';
 
 export interface Level {
   day: number;
@@ -13,10 +16,32 @@ export interface Level {
   /** Fixed scroll speed in pixels per second. */
   speed: number;
   build: () => CourseLayout;
+  mood?: Mood;
 }
 
+/** Each door runs a little faster than the one before. */
+const SPEED_STEP = 3;
+
+export function doorSpeed(day: number): number {
+  return DOOR_ONE_SPEED + SPEED_STEP * (day - 1);
+}
+
+const door = (day: number, name: string, build: () => CourseLayout, mood?: Mood): Level => ({
+  day,
+  name,
+  speed: doorSpeed(day),
+  build,
+  mood,
+});
+
 export const LEVELS: readonly Level[] = [
-  { day: 1, name: 'Joulurata', speed: DOOR_ONE_SPEED, build: christmasCourse },
+  door(1, 'Joulurata', door1),
+  door(2, 'Lumipallorata', door2),
+  door(3, 'Lumiukkojen pelto', door3),
+  door(4, 'Kuusikko', door4),
+  door(5, 'Putkirata', door5),
+  door(6, 'Itsenäisyyspäivän rata', door6, 'finnish'),
+  door(7, 'Viikon finaali', door7),
 ];
 
 /**

@@ -2,7 +2,7 @@ import { mkdtempSync, writeFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { christmasCourse } from '../shared/levels/christmas.ts';
+import { LEVELS } from '../shared/levels/registry.ts';
 import { createApp } from './app.ts';
 import { Store } from './db.ts';
 
@@ -96,9 +96,9 @@ describe('calendar', () => {
   });
 
   it('shows a door whose level is not released yet as coming soon', async () => {
-    const { call } = setup(december(3));
+    const { call } = setup(december(9));
     const { body } = await call('GET', '/api/calendar');
-    expect(body.doors.slice(0, 4).map((d: { state: string }) => d.state)).toEqual([
+    expect(body.doors.slice(6, 10).map((d: { state: string }) => d.state)).toEqual([
       'open',
       'coming-soon',
       'coming-soon',
@@ -158,7 +158,7 @@ describe('runs and leaderboards', () => {
   it('rejects impossible cookie counts and hearts, and unknown players', async () => {
     const { register, postRun } = setup(december(3));
     const player = await register('Timo');
-    const total = christmasCourse().cookies.length;
+    const total = LEVELS[0]!.build().cookies.length;
     expect((await postRun(player.id, total + 1, 3)).status).toBe(400);
     expect((await postRun(player.id, total, 4)).status).toBe(400);
     expect((await postRun(player.id, 5, 0)).status).toBe(400);

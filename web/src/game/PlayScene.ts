@@ -73,6 +73,10 @@ export class PlayScene extends Phaser.Scene {
   private dogPicture!: Phaser.GameObjects.Container;
   private outfitLayer!: Phaser.GameObjects.Container;
   private tilt = 0;
+  /** Independence Day: Finnish flags and a paler sky. */
+  private get finnish(): boolean {
+    return this.options.level.mood === 'finnish';
+  }
   private stride = 0;
   private lastDogX: number | null = null;
   private wasGrounded = true;
@@ -96,7 +100,7 @@ export class PlayScene extends Phaser.Scene {
   create(): void {
     addWhiteDogTexture(this);
     this.makeTextures();
-    this.cameras.main.setBackgroundColor(art.SKY);
+    this.cameras.main.setBackgroundColor(this.finnish ? art.FINNISH_SKY : art.SKY);
     this.scale.on('resize', (size: Phaser.Structs.Size) => {
       this.cameras.main.setSize(size.width, size.height);
       // A new view size jumps straight to the right height instead of easing there.
@@ -221,13 +225,16 @@ export class PlayScene extends Phaser.Scene {
       art.drawSnowman(chunkAt(x), x + SNOWMAN_WIDTH / 2 - w / 2, w, SNOWMAN_HEIGHT * SNOWMAN_LOOK_SCALE);
     }
     for (const branch of layout.branches) art.drawBranch(chunkAt(branch.x0), branch);
+    // Tunnels go in front of the dog, which crawls through out of sight.
+    const tunnels = this.add.graphics().setDepth(11);
+    for (const t of layout.tunnels) art.drawTunnel(tunnels, t.x0, t.x1);
     for (const t of layout.tables) art.drawTable(chunkAt(t.x0), t);
     for (const a of layout.aframes) art.drawAFrame(chunkAt(a.x0), a);
     art.drawFinish(chunkAt(layout.finishX), layout.finishX);
 
     this.checkpointFlags = layout.checkpoints.map((x) => {
       const flag = this.add.graphics().setDepth(2);
-      art.drawCheckpoint(flag, x, false);
+      art.drawCheckpoint(flag, x, false, this.finnish);
       return flag;
     });
     this.cookieImages = layout.cookies.map((c) => this.add.image(c.x, art.sy(c.y), 'cookie').setDepth(5));
@@ -269,7 +276,7 @@ export class PlayScene extends Phaser.Scene {
       const flag = this.checkpointFlags[i]!;
       if (flag.getData('reached') !== reached) {
         flag.setData('reached', reached);
-        art.drawCheckpoint(flag, state.layout.checkpoints[i]!, reached);
+        art.drawCheckpoint(flag, state.layout.checkpoints[i]!, reached, this.finnish);
       }
     });
     state.cookies.forEach((c, i) => {

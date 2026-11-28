@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { COOKIE_RADIUS, DOG_HALF_SIZE, GROUND_TOP, HURDLE_WIDTH } from './constants.ts';
+import { COOKIE_RADIUS, DOG_HALF_SIZE, GROUND_TOP, HURDLE_WIDTH, TUNNEL_HEIGHT } from './constants.ts';
 import type { CourseLayout } from './course.ts';
 import { update } from './game.ts';
 import { score } from './score.ts';
@@ -81,6 +81,40 @@ describe('hearts and checkpoints', () => {
     const x = state.dog.body.center.x;
     runFor(state, 1);
     expect(state.dog.body.center.x).toBe(x);
+  });
+
+  it('crawls through a tunnel by itself and stands up after it', () => {
+    const state = startRun(flatCourse(50_000, { tunnels: [{ x0: 500, x1: 860 }] }));
+    let crawled = false;
+    for (let t = 0; t < 6; t += FRAME) {
+      update(state, { jump: false }, FRAME);
+      crawled ||= state.dog.crawling;
+    }
+    expect(crawled).toBe(true);
+    expect(state.hearts).toBe(3);
+    expect(state.dog.crawling).toBe(false);
+    expect(state.dog.body.half.y).toBe(DOG_HALF_SIZE.y);
+    expect(state.dog.body.center.x).toBeGreaterThan(860);
+  });
+
+  it('ignores jump taps inside a tunnel', () => {
+    const state = startRun(flatCourse(50_000, { tunnels: [{ x0: 400, x1: 1_400 }] }));
+    while (!state.dog.crawling) update(state, { jump: false }, FRAME);
+    tap(state);
+    runFor(state, 0.3);
+    expect(state.dog.crawling).toBe(true);
+    expect(state.hearts).toBe(3);
+  });
+
+  it('lands on top of the tunnel after a jump and runs along it', () => {
+    const state = startRun(flatCourse(50_000, { tunnels: [{ x0: 500, x1: 860 }] }));
+    while (state.dog.body.center.x < 500 - DOG_HALF_SIZE.x - 90) update(state, { jump: false }, FRAME);
+    tap(state);
+    runFor(state, 1);
+    expect(state.dog.crawling).toBe(false);
+    expect(state.dog.body.center.y - state.dog.body.half.y).toBeCloseTo(GROUND_TOP + TUNNEL_HEIGHT, 1);
+    runFor(state, 3);
+    expect(state.hearts).toBe(3);
   });
 
   it('costs a heart for knocking over a snowman', () => {

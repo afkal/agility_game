@@ -56,6 +56,15 @@ export const SNOWMAN_HEIGHT = 74;
 /** Snowman hits use a narrower box, so brushing its round sides is a miss. */
 export const SNOWMAN_HIT_SHRINK = 8;
 
+/** A tunnel's inside is this high: the dog only fits by crawling. */
+export const TUNNEL_INNER_HEIGHT = 44;
+/** The tunnel's outside height; its top can be run on. */
+export const TUNNEL_HEIGHT = 100;
+/** Half the dog's height while it crawls through a tunnel. */
+export const CRAWL_HALF_HEIGHT = 19;
+/** The dog starts crawling this far before the tunnel mouth. */
+export const CRAWL_LOOKAHEAD = 24;
+
 /** A second tap in the air jumps again from there, once per jump, this fast. */
 export const AIR_JUMP_VELOCITY = 650;
 /**

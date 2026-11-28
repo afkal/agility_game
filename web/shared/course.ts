@@ -4,6 +4,8 @@
 import {
   SNOWMAN_HEIGHT,
   SNOWMAN_WIDTH,
+  TUNNEL_HEIGHT,
+  TUNNEL_INNER_HEIGHT,
   GROUND_BOTTOM,
   GROUND_TOP,
   HURDLE_HEIGHT,
@@ -16,6 +18,11 @@ export interface Table {
   x0: number;
   x1: number;
   top: number;
+}
+
+export interface Tunnel {
+  x0: number;
+  x1: number;
 }
 
 export interface Branch {
@@ -40,6 +47,8 @@ export interface CourseLayout {
   snowmen: number[];
   /** Snowy spruce branches in the air: land on them from above, pass under or jump up through them. */
   branches: Branch[];
+  /** Tunnels the dog crawls through by itself, as long as it reaches the mouth on the ground. */
+  tunnels: Tunnel[];
   tables: Table[];
   aframes: AFrame[];
   cookies: Vec2[];
@@ -75,6 +84,11 @@ export function snowmanBox(x: number): Aabb {
   return { min: { x, y: GROUND_TOP }, max: { x: x + SNOWMAN_WIDTH, y: GROUND_TOP + SNOWMAN_HEIGHT } };
 }
 
+/** The tunnel's solid roof: low enough that only a crawling dog fits under it. */
+export function tunnelRoof(t: Tunnel): Aabb {
+  return { min: { x: t.x0, y: GROUND_TOP + TUNNEL_INNER_HEIGHT }, max: { x: t.x1, y: GROUND_TOP + TUNNEL_HEIGHT } };
+}
+
 export function tableBox(table: Table): Aabb {
   return { min: { x: table.x0, y: GROUND_TOP }, max: { x: table.x1, y: table.top } };
 }
@@ -88,6 +102,7 @@ export function solidsOf(layout: CourseLayout): Solid[] {
     for (const ramp of aframeRamps(a)) solids.push({ kind: 'ramp', ramp });
   }
   for (const branch of layout.branches) solids.push({ kind: 'ledge', ledge: branch });
+  for (const tunnel of layout.tunnels) solids.push({ kind: 'box', box: tunnelRoof(tunnel) });
   return solids;
 }
 
@@ -145,6 +160,7 @@ export class Builder {
     hurdles: [],
     snowmen: [],
     branches: [],
+    tunnels: [],
     tables: [],
     aframes: [],
     cookies: [],
@@ -209,6 +225,34 @@ export class Builder {
     this.cookie(middle - 60, GROUND_TOP + SKY_COOKIE_LIFT);
     this.cookie(middle + 60, GROUND_TOP + SKY_COOKIE_LIFT);
     this.ground(length);
+  }
+
+  /**
+   * Snowballs rolling in one after another, `gaps` apart. Close together a
+   * single jump clears two; further apart each needs its own jump.
+   */
+  snowballs(gaps: number[]): void {
+    let x = this.x + 900;
+    this.layout.snowballs.push(x);
+    for (const gap of gaps) {
+      x += gap;
+      this.layout.snowballs.push(x);
+    }
+    this.ground(x - this.x + 200);
+  }
+
+  /**
+   * A tunnel the dog crawls through by itself. A jump onto it runs along the
+   * top instead, where two cookies wait; one more waits past the far end.
+   */
+  tunnel(length = 360): void {
+    const x0 = this.x + 250;
+    const x1 = x0 + length;
+    this.layout.tunnels.push({ x0, x1 });
+    this.cookie(x0 + length / 3, GROUND_TOP + TUNNEL_HEIGHT + COOKIE_LIFT);
+    this.cookie(x0 + (2 * length) / 3, GROUND_TOP + TUNNEL_HEIGHT + COOKIE_LIFT);
+    this.cookie(x1 + 90, GROUND_TOP + COOKIE_LIFT);
+    this.ground(x1 - this.x + 300);
   }
 
   /** A snowman to jump over, with a cookie above it for a clean jump. */

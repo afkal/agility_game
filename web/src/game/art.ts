@@ -5,7 +5,7 @@
 // draws y-down from the top, so world heights go through `sy` first.
 
 import type Phaser from 'phaser';
-import { GROUND_BOTTOM, GROUND_TOP, WORLD_HEIGHT } from '../../shared/constants.ts';
+import { GROUND_BOTTOM, GROUND_TOP, TUNNEL_HEIGHT, WORLD_HEIGHT } from '../../shared/constants.ts';
 import { type AFrame, type Branch, type Table, aframeApex } from '../../shared/course.ts';
 import type { Aabb } from '../../shared/physics.ts';
 
@@ -22,6 +22,9 @@ export const HEART_RED = 0xeb2e4d;
 const ICE = 0x9edbf2;
 const DEEP_WATER = 0x3d78b3;
 const TRUNK = 0x6b4529;
+const FINNISH_BLUE = 0x0d3d8c;
+/** A paler, clear-sky blue for Independence Day. */
+export const FINNISH_SKY = 0x9cc9f2;
 /** Pale, frosty green for the trees on the hills behind the course. */
 const FROSTED_PINE = 0x5f9c83;
 
@@ -220,11 +223,41 @@ function starPoints(cx: number, cy: number, r: number): { x: number; y: number }
   });
 }
 
-/** A checkpoint flag on a little pole; gold once the dog has passed it. */
-export function drawCheckpoint(g: G, x: number, reached: boolean): void {
+/**
+ * A checkpoint flag on a little pole; gold once the dog has passed it. On
+ * Independence Day it is a Finnish flag, with a gold knob once passed.
+ */
+export function drawCheckpoint(g: G, x: number, reached: boolean, finnish = false): void {
   g.clear();
-  rect(g, TRUNK, x - 3, GROUND_TOP, x + 3, GROUND_TOP + 90);
+  rect(g, TRUNK, x - 3, GROUND_TOP, x + 3, GROUND_TOP + 96);
+  if (finnish) {
+    const top = GROUND_TOP + 92;
+    rect(g, SNOW_WHITE, x + 3, top - 30, x + 51, top);
+    rect(g, FINNISH_BLUE, x + 3, top - 19, x + 51, top - 11);
+    rect(g, FINNISH_BLUE, x + 16, top - 30, x + 24, top);
+    if (reached) circle(g, GOLD, x, GROUND_TOP + 100, 6);
+    return;
+  }
   triangle(g, reached ? GOLD : PINE_GREEN, x + 3, GROUND_TOP + 88, x + 3, GROUND_TOP + 58, x + 45, GROUND_TOP + 73);
+}
+
+/**
+ * An agility tunnel: a ribbed green tube with snow on top. It is drawn in
+ * front of the dog, so the dog disappears inside while it crawls through.
+ */
+export function drawTunnel(g: G, x0: number, x1: number): void {
+  const top = GROUND_TOP + TUNNEL_HEIGHT;
+  rect(g, PINE_GREEN, x0, GROUND_TOP, x1, top);
+  for (let x = x0 + 14; x < x1 - 8; x += 26) rect(g, DARK_PINE, x, GROUND_TOP, x + 6, top);
+  g.fillStyle(SNOW_WHITE, 1);
+  g.fillRoundedRect(x0 - 4, sy(top + 6), x1 - x0 + 8, 12, 6);
+  // Dark mouths at both ends, with a red rim.
+  for (const x of [x0, x1]) {
+    g.fillStyle(CANDY_RED, 1);
+    g.fillEllipse(x, sy(GROUND_TOP + TUNNEL_HEIGHT / 2), 30, TUNNEL_HEIGHT + 6);
+    g.fillStyle(0x1d2a33, 1);
+    g.fillEllipse(x, sy(GROUND_TOP + TUNNEL_HEIGHT / 2 - 3), 20, TUNNEL_HEIGHT - 10);
+  }
 }
 
 /**

@@ -100,7 +100,7 @@ export function update(state: GameState, input: GameInput, rawDt: number): void 
 
   state.scroll += state.speed * dt;
   if (input.jump) state.dog.jumpBuffer = JUMP_BUFFER_TIME;
-  moveDog(state.dog, state.scroll, state.speed, state.solids, dt);
+  moveDog(state.dog, state.scroll, state.speed, state.solids, dt, state.layout.tunnels);
   spawnDueSnowballs(state);
   moveSnowballs(state, dt);
   trackCheckpoints(state);

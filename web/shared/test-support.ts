@@ -16,6 +16,7 @@ export function flatCourse(length: number, extra: Partial<CourseLayout> = {}): C
     hurdles: [],
     snowmen: [],
     branches: [],
+    tunnels: [],
     tables: [],
     aframes: [],
     cookies: [],
