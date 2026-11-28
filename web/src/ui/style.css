@@ -1,0 +1,580 @@
+:root {
+  --sky: #73adeb;
+  --night: #1e3a5f;
+  --red: #d91f29;
+  --gold: #facc38;
+  --snow: #f7faff;
+  --green: #1a7a40;
+  font-family: FiraSans-Bold, system-ui, sans-serif;
+  color: var(--night);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: linear-gradient(#73adeb, #cfe4fa) fixed;
+  min-height: 100%;
+}
+
+#app {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.screen {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.title {
+  margin: 8px 0 0;
+  font-size: clamp(30px, 8vw, 44px);
+  color: #fff;
+  text-shadow: 2px 2px 4px rgba(30, 58, 95, 0.6);
+  text-align: center;
+}
+
+.lead {
+  margin: 0;
+  font-size: 18px;
+  text-align: center;
+}
+
+.field-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 8px 0 0;
+  font-size: 18px;
+}
+
+.name-input {
+  padding: 12px 14px;
+  border: 2px solid #fff;
+  border-radius: 12px;
+  font-size: 20px;
+  background: var(--snow);
+  color: var(--night);
+}
+
+.form-error {
+  margin: 0;
+  min-height: 1.3em;
+  color: var(--red);
+  text-align: center;
+}
+
+.primary,
+.secondary,
+.small {
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.primary {
+  padding: 14px 24px;
+  font-size: 22px;
+  background: var(--red);
+  color: #fff;
+}
+
+.primary:disabled {
+  opacity: 0.6;
+}
+
+.secondary {
+  padding: 12px 24px;
+  font-size: 18px;
+  background: #fff;
+  color: var(--night);
+}
+
+.small {
+  padding: 8px 14px;
+  font-size: 15px;
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--night);
+}
+
+.dog-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.dog-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 6px;
+  border: 3px solid transparent;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.75);
+  cursor: pointer;
+}
+
+.dog-card:has(input:checked) {
+  border-color: var(--red);
+  background: #fff;
+}
+
+.dog-card input {
+  position: absolute;
+  opacity: 0;
+}
+
+.dog-picture {
+  width: 100%;
+  max-width: 120px;
+  aspect-ratio: 1;
+  object-fit: contain;
+}
+
+.dog-preview {
+  display: block;
+  width: min(220px, 60vw);
+  margin: 0 auto;
+}
+
+.wardrobe-slot {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wardrobe-slot h2 {
+  margin: 4px 0 0;
+  font-size: 18px;
+}
+
+.wardrobe-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.item-chip {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--night);
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.item-chip.chosen {
+  border-color: var(--red);
+  background: #fff;
+}
+
+.item-chip:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.dog-name {
+  font-size: 20px;
+}
+
+.calendar-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.who {
+  margin: 0;
+  font-size: 20px;
+}
+
+.calendar-tools {
+  display: flex;
+  gap: 8px;
+}
+
+.test-badge {
+  margin: 0;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--gold);
+  font-size: 14px;
+}
+
+.doors {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+@media (min-width: 560px) {
+  .doors {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+.door {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+  color: #fff;
+}
+
+.door-number {
+  font-size: clamp(22px, 6vw, 32px);
+}
+
+.door-note {
+  font-size: 13px;
+}
+
+.door-closed {
+  background: rgba(30, 58, 95, 0.35);
+  cursor: default;
+}
+
+.door-open {
+  background: var(--red);
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.15);
+}
+
+.door-coming-soon {
+  background: var(--green);
+  opacity: 0.8;
+}
+
+.door-today {
+  outline: 4px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.card-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(30, 58, 95, 0.55);
+}
+
+.card {
+  width: 100%;
+  max-width: 440px;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  border-radius: 20px;
+  background: var(--snow);
+}
+
+.card-title {
+  margin: 0;
+  font-size: 26px;
+  text-align: center;
+}
+
+.card-subtitle {
+  margin: 4px 0 0;
+  font-size: 18px;
+}
+
+.leaderboard {
+  margin: 0;
+  padding-left: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.leaderboard-row {
+  font-size: 18px;
+}
+
+.leaderboard-row > span {
+  display: inline-flex;
+}
+
+.leaderboard-row {
+  display: list-item;
+}
+
+.leaderboard-name {
+  margin-right: 8px;
+}
+
+.leaderboard-score {
+  color: var(--red);
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.pin-input {
+  letter-spacing: 0.2em;
+  text-align: center;
+}
+
+.pin-code {
+  margin: 4px auto;
+  padding: 10px 24px;
+  border-radius: 16px;
+  background: #fff;
+  font-size: clamp(36px, 10vw, 52px);
+  letter-spacing: 0.12em;
+  text-align: center;
+}
+
+.link-button {
+  align-self: center;
+  border: 0;
+  background: none;
+  color: var(--night);
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 8px;
+}
+
+.calendar-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.countdown {
+  margin: 0;
+  font-size: clamp(20px, 5vw, 26px);
+  text-align: center;
+  color: #fff;
+  text-shadow: 1px 1px 3px rgba(30, 58, 95, 0.6);
+}
+
+.warmup {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--green);
+  color: #fff;
+  font: inherit;
+  font-size: 20px;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(30, 58, 95, 0.25);
+}
+
+.warmup-name {
+  white-space: nowrap;
+}
+
+.warmup-note {
+  font-size: 15px;
+  opacity: 0.9;
+  text-align: right;
+}
+
+/* The first door glows while the calendar waits for December. */
+.door-next {
+  animation: door-glow 1.6s ease-in-out infinite alternate;
+}
+
+@keyframes door-glow {
+  from {
+    box-shadow: 0 0 4px 1px rgba(250, 204, 56, 0.4);
+  }
+  to {
+    box-shadow: 0 0 18px 6px rgba(250, 204, 56, 0.95);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .door-next {
+    animation: none;
+    box-shadow: 0 0 12px 4px rgba(250, 204, 56, 0.8);
+  }
+}
+
+.starting-line {
+  margin-top: 8px;
+  padding: 12px 14px 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.starting-line-title {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+
+.starting-line-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.starting-line-player {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.starting-line-dog {
+  width: 80px;
+}
+
+.starting-line-name {
+  font-size: 16px;
+}
+
+.starting-line-dog-name {
+  font-size: 13px;
+  opacity: 0.75;
+}
+
+.install-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.install-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.8);
+  font-size: 18px;
+}
+
+.install-number {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--red);
+  color: #fff;
+}
+
+.install-icon {
+  width: 22px;
+  height: 22px;
+  margin: 0 2px;
+  vertical-align: -5px;
+  color: #1a73e8;
+}
+
+.install-or,
+.install-tip {
+  margin: 0;
+  font-size: 16px;
+  text-align: center;
+}
+
+.install-tip {
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.45);
+  text-align: left;
+}
+
+.install-done[hidden] {
+  display: none;
+}
+
+.install-reminder {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--gold);
+}
+
+.install-reminder p {
+  margin: 4px 0 0;
+}
+
+.install-details summary {
+  margin-top: 6px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.install-details .install-steps {
+  margin-top: 8px;
+}
+
+.install-details .install-step {
+  font-size: 16px;
+  padding: 8px 10px;
+}
+
+.install-reminder .primary {
+  margin-top: 8px;
+}
+
+.install-close {
+  flex: none;
+  margin-left: auto;
+  border: 0;
+  background: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--night);
+}
+
+.install-pin {
+  white-space: nowrap;
+}
+
+.install-address {
+  margin: 0;
+  padding: 10px;
+  border-radius: 12px;
+  background: #fff;
+  text-align: center;
+  font-size: 18px;
+  user-select: all;
+  -webkit-user-select: all;
+}

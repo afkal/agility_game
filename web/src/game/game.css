@@ -1,0 +1,185 @@
+.game-root {
+  position: fixed;
+  inset: 0;
+  background: #73adeb;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.game-canvas,
+.game-canvas canvas {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+}
+
+.game-back {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  left: max(12px, env(safe-area-inset-left));
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(20, 40, 70, 0.45);
+  color: #fff;
+  font-size: 22px;
+  cursor: pointer;
+  /* Above the rotate prompt, so a player can leave without turning the phone. */
+  z-index: 6;
+}
+
+.game-rotate {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: #1e3a5f;
+  color: #fff;
+  font: 700 22px/1.4 FiraSans-Bold, system-ui, sans-serif;
+  text-align: center;
+}
+
+@media (orientation: portrait) and (pointer: coarse) {
+  .game-rotate {
+    display: flex;
+  }
+}
+
+.game-finish {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: rgba(20, 40, 70, 0.55);
+  color: #fff;
+  font-family: FiraSans-Bold, system-ui, sans-serif;
+  text-align: center;
+  padding: 16px;
+}
+
+.game-finish[hidden] {
+  display: none;
+}
+
+.game-finish-title {
+  font-size: clamp(32px, 8vh, 64px);
+  margin: 0;
+}
+
+.game-finish-score {
+  font-size: clamp(20px, 5vh, 34px);
+  margin: 0;
+}
+
+.game-finish-points {
+  font-size: clamp(24px, 6vh, 42px);
+  margin: 0;
+  color: #facc38;
+}
+
+.game-finish-status {
+  font-size: 18px;
+  margin: 8px 0;
+  min-height: 1.5em;
+}
+
+.game-finish-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.game-finish-buttons[hidden] {
+  visibility: hidden;
+  display: flex;
+}
+
+.game-button {
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 24px;
+  font: 700 20px FiraSans-Bold, system-ui, sans-serif;
+  background: #d91f29;
+  color: #fff;
+  cursor: pointer;
+}
+
+.game-button-secondary {
+  background: #fff;
+  color: #1e3a5f;
+}
+
+.game-link {
+  border: 0;
+  background: none;
+  color: #facc38;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* The pause screen shows above the rotate prompt, so a player can stop without turning the phone. */
+.game-pause {
+  z-index: 7;
+  background: rgba(20, 40, 70, 0.7);
+}
+
+.game-countdown {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font: 700 clamp(80px, 25vh, 180px) FiraSans-Bold, system-ui, sans-serif;
+  text-shadow: 4px 4px 10px rgba(30, 58, 95, 0.6);
+  pointer-events: none;
+}
+
+.game-countdown[hidden] {
+  display: none;
+}
+
+.game-back[hidden] {
+  display: none;
+}
+
+.game-finish-prize {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0 0;
+  padding: 4px 16px 4px 8px;
+  border-radius: 14px;
+  background: rgba(250, 204, 56, 0.92);
+  color: #1e3a5f;
+  font-size: 18px;
+  max-width: 34em;
+  text-align: left;
+}
+
+.game-finish-prize p {
+  margin: 0;
+}
+
+.game-prize-dog {
+  width: clamp(64px, 18vh, 110px);
+  flex: none;
+}
+
+.game-finish-prize[hidden] {
+  display: none;
+}
