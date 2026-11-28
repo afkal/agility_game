@@ -210,7 +210,7 @@ export function startGame(host: HTMLElement, options: StartGameOptions): GameHan
       if (outcome.newItem && outcome.outfit) {
         prize.replaceChildren(
           dogPicture(options.dogId, outcome.outfit, 'game-prize-dog'),
-          el('p', '', `🎁 Uusi varuste: ${outcome.newItem}! ${dogName} puki sen heti ylleen.`),
+          el('p', '', `🎁 Uusi varuste: ${outcome.newItem}!`),
         );
         prize.hidden = false;
         // The next try on this course already shows the new item.

@@ -140,17 +140,37 @@ export function surfaceAt(layout: CourseLayout, x: number): number | null {
   return best;
 }
 
-/**
- * Cookies float this high above the surface they belong to, within reach of a
- * standing or lightly jumping dog.
- */
-const COOKIE_LIFT = 60;
+/** Cookies inside a tunnel float this low, where only a crawling dog reaches them. */
+const TUNNEL_COOKIE_LIFT = 22;
 
-/** Some cookies on flat ground float this high, so the dog has to jump for them. */
-const HIGH_COOKIE_LIFT = 150;
+/*
+ * Cookie heights above the surface below them. Most are placed off the path a
+ * dog takes anyway, so collecting them takes a jump of its own:
+ *
+ * - WALK: the dog runs into it (few of these).
+ * - JUMP: needs a jump of its own.
+ * - HIGH: needs a full, well-timed jump.
+ * - DOUBLE: above the top of a single jump, so it needs the second jump.
+ */
+const WALK = 60;
+const JUMP = 190;
+const HIGH = 235;
+const DOUBLE = 300;
 
 /** Sky cookies float above the top of a single jump, so they need the second jump. */
-const SKY_COOKIE_LIFT = 290;
+const SKY_COOKIE_LIFT = DOUBLE - 10;
+
+/** A small seeded random source, so a course is the same on every build. */
+function seeded(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4_294_967_296;
+  };
+}
 
 /** Lays a course out left to right from a cursor. */
 export class Builder {
@@ -169,6 +189,12 @@ export class Builder {
     startX: 0,
     finishX: 0,
   };
+  private readonly random: () => number;
+
+  /** `seed` varies where the cookies on flat ground go; each door uses its own. */
+  constructor(seed = 1) {
+    this.random = seeded(seed);
+  }
 
   ground(length: number): void {
     const end = this.x + length;
@@ -186,17 +212,27 @@ export class Builder {
   }
 
   /**
-   * Flat snowy ground, optionally with a row of cookies along it. Every third
-   * cookie floats higher, out of reach without a jump.
+   * Flat snowy ground, optionally with cookies along it in small groups at
+   * varied heights: one to jump for, a pair stacked for a double jump, an arc
+   * to jump through, now and then an easy one, or a quiet stretch.
    */
   flat(length: number, cookies: boolean): void {
     const start = this.x;
     if (cookies) {
-      const count = Math.floor(length / 180);
-      for (let i = 0; i < count; i++) {
-        const x = start + 150 + i * 180;
-        const lift = i % 3 === 1 ? HIGH_COOKIE_LIFT : COOKIE_LIFT;
-        if (x < start + length - 100) this.cookie(x, GROUND_TOP + lift);
+      for (let x = start + 180; x < start + length - 120; x += 380) {
+        const roll = this.random();
+        if (roll < 0.3) {
+          this.cookie(x, GROUND_TOP + JUMP + this.random() * 40);
+        } else if (roll < 0.5) {
+          this.cookie(x, GROUND_TOP + JUMP);
+          this.cookie(x, GROUND_TOP + DOUBLE + 10);
+        } else if (roll < 0.75) {
+          this.cookie(x - 70, GROUND_TOP + 170);
+          this.cookie(x, GROUND_TOP + HIGH);
+          this.cookie(x + 70, GROUND_TOP + 170);
+        } else if (roll < 0.87) {
+          this.cookie(x, GROUND_TOP + WALK);
+        }
       }
     }
     this.ground(length);
@@ -212,10 +248,9 @@ export class Builder {
     const low: Branch = { x0, x1: x0 + 260, top: GROUND_TOP + 140 };
     const high: Branch = { x0: x0 + 340, x1: x0 + 600, top: GROUND_TOP + 260 };
     this.layout.branches.push(low, high);
-    this.cookie(low.x0 + 130, low.top + COOKIE_LIFT);
-    this.cookie(high.x0 + 70, high.top + COOKIE_LIFT);
-    this.cookie(high.x0 + 190, high.top + COOKIE_LIFT);
-    this.cookie(high.x0 + 130, GROUND_TOP + COOKIE_LIFT);
+    this.cookie(low.x0 + 130, low.top + WALK);
+    this.cookie(high.x0 + 70, high.top + WALK);
+    this.cookie(high.x0 + 190, high.top + WALK);
     this.ground(high.x1 - this.x + 300);
   }
 
@@ -242,46 +277,53 @@ export class Builder {
   }
 
   /**
-   * A tunnel the dog crawls through by itself. A jump onto it runs along the
-   * top instead, where two cookies wait; one more waits past the far end.
+   * A tunnel the dog crawls through by itself, with cookies inside that only
+   * a crawling dog collects. There is no jumping inside, so whatever comes
+   * right after the far end needs a quick jump.
    */
-  tunnel(length = 360): void {
+  tunnel(length = 360, after = 300): void {
     const x0 = this.x + 250;
     const x1 = x0 + length;
     this.layout.tunnels.push({ x0, x1 });
-    this.cookie(x0 + length / 3, GROUND_TOP + TUNNEL_HEIGHT + COOKIE_LIFT);
-    this.cookie(x0 + (2 * length) / 3, GROUND_TOP + TUNNEL_HEIGHT + COOKIE_LIFT);
-    this.cookie(x1 + 90, GROUND_TOP + COOKIE_LIFT);
-    this.ground(x1 - this.x + 300);
+    for (let x = x0 + 80; x < x1 - 40; x += 110) this.cookie(x, GROUND_TOP + TUNNEL_COOKIE_LIFT);
+    this.ground(x1 - this.x + after);
   }
 
-  /** A snowman to jump over, with a cookie above it for a clean jump. */
+  /** A tunnel with a hurdle right after it: the jump has to come the moment the dog is out. */
+  tunnelThenHurdle(length = 360): void {
+    this.tunnel(length, 0);
+    this.hurdle();
+  }
+
+  /** A snowman to jump over, with a cookie high above it for a second jump. */
   snowman(): void {
     const x = this.x + 200;
     this.layout.snowmen.push(x);
-    this.cookie(x + SNOWMAN_WIDTH / 2, GROUND_TOP + SNOWMAN_HEIGHT + 70);
+    this.cookie(x + SNOWMAN_WIDTH / 2, GROUND_TOP + SNOWMAN_HEIGHT + 200);
     this.ground(400);
   }
 
-  /** A hurdle with an arc of cookies over it that a clean jump collects. */
+  /**
+   * A hurdle, with a cookie above it that needs the second jump and one just
+   * past the landing that needs a quick new jump.
+   */
   hurdle(): void {
     const x = this.x + 200;
     this.layout.hurdles.push(x);
     const mid = x + HURDLE_WIDTH / 2;
-    this.cookie(mid - 60, GROUND_TOP + 130);
-    this.cookie(mid, GROUND_TOP + 170);
-    this.cookie(mid + 60, GROUND_TOP + 130);
+    this.cookie(mid, GROUND_TOP + DOUBLE);
+    this.cookie(mid + 230, GROUND_TOP + JUMP);
     this.ground(400);
   }
 
-  /** A single agility table of the given length and height. */
+  /** A single agility table of the given length and height, with cookies to jump for above it. */
   table(length: number, height: number): void {
     const x0 = this.x + 150;
     const x1 = x0 + length;
     const top = GROUND_TOP + height;
     this.layout.tables.push({ x0, x1, top });
-    for (let x = x0 + 80; x < x1 - 60; x += 120) {
-      this.cookie(x, top + COOKIE_LIFT);
+    for (let x = x0 + 110; x < x1 - 60; x += 180) {
+      this.cookie(x, top + JUMP);
     }
     this.ground(x1 - this.x + 250);
   }
@@ -293,26 +335,28 @@ export class Builder {
     const x1 = mid + 320;
     this.layout.tables.push({ x0, x1: mid, top: GROUND_TOP + low });
     this.layout.tables.push({ x0: mid, x1, top: GROUND_TOP + high });
-    this.cookie(x0 + 130, GROUND_TOP + low + COOKIE_LIFT);
-    this.cookie(mid + 100, GROUND_TOP + high + COOKIE_LIFT);
-    this.cookie(mid + 220, GROUND_TOP + high + COOKIE_LIFT);
+    this.cookie(x0 + 130, GROUND_TOP + low + JUMP);
+    this.cookie(mid + 180, GROUND_TOP + high + HIGH);
     this.ground(x1 - this.x + 300);
   }
 
-  /** A gap with a cookie over the middle at jump height. */
+  /** A gap with a cookie high over the middle, for a jump timed to peak there. */
   gap(width: number): void {
-    this.cookie(this.x + width / 2, GROUND_TOP + 120);
+    this.cookie(this.x + width / 2, GROUND_TOP + HIGH);
     this.x += width;
   }
 
-  /** The A-frame, with a cookie waiting at the top. */
+  /**
+   * The A-frame. Walking over it collects nothing: one cookie waits for a jump
+   * at the top, and two high over the slopes need the second jump.
+   */
   aframe(): void {
     const aframe: AFrame = { x0: this.x + 150, halfWidth: 300, height: 150 };
     const apex = aframeApex(aframe);
     this.layout.aframes.push(aframe);
-    this.cookie(apex.x, apex.y + COOKIE_LIFT);
-    this.cookie(aframe.x0 + 150, GROUND_TOP + 75 + COOKIE_LIFT);
-    this.cookie(apex.x + 150, GROUND_TOP + 75 + COOKIE_LIFT);
+    this.cookie(apex.x, apex.y + JUMP - 20);
+    this.cookie(aframe.x0 + 150, GROUND_TOP + 75 + DOUBLE - 20);
+    this.cookie(apex.x + 150, GROUND_TOP + 75 + DOUBLE - 20);
     this.ground(2 * aframe.halfWidth + 400);
   }
 

@@ -106,6 +106,16 @@ describe('hearts and checkpoints', () => {
     expect(state.hearts).toBe(3);
   });
 
+  it('clears a hurdle right after a tunnel with a jump the moment it is out', () => {
+    const state = startRun(flatCourse(50_000, { tunnels: [{ x0: 500, x1: 860 }], hurdles: [1_060] }));
+    while (state.dog.body.center.x < 860 + 100) update(state, { jump: false }, FRAME);
+    expect(state.dog.crawling).toBe(false);
+    tap(state);
+    runFor(state, 3);
+    expect(state.hearts).toBe(3);
+    expect(state.dog.body.center.x).toBeGreaterThan(1_100);
+  });
+
   it('lands on top of the tunnel after a jump and runs along it', () => {
     const state = startRun(flatCourse(50_000, { tunnels: [{ x0: 500, x1: 860 }] }));
     while (state.dog.body.center.x < 500 - DOG_HALF_SIZE.x - 90) update(state, { jump: false }, FRAME);

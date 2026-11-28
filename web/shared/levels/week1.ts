@@ -7,12 +7,13 @@
 //   4  + spruce branches and cookies that need the second jump
 //   5  + tunnels
 //   6  Independence Day: everything so far, in blue and white
-//   7  the week's finale: everything, closer together, snowballs in groups
+//   7  Piparitalkoot: everything, closer together, snowballs in groups, and
+//      cookies everywhere for the skilled jumper
 
 import { Builder, type CourseLayout } from '../course.ts';
 
 export function door1(): CourseLayout {
-  const b = new Builder();
+  const b = new Builder(1);
   b.flat(900, true);
   b.hurdle();
   b.flat(400, true);
@@ -73,7 +74,7 @@ export function door1(): CourseLayout {
 }
 
 export function door2(): CourseLayout {
-  const b = new Builder();
+  const b = new Builder(2);
   b.flat(900, true);
   b.hurdle();
   b.flat(400, true);
@@ -125,7 +126,7 @@ export function door2(): CourseLayout {
 }
 
 export function door3(): CourseLayout {
-  const b = new Builder();
+  const b = new Builder(3);
   b.flat(900, true);
   b.snowman();
   b.flat(400, true);
@@ -181,7 +182,7 @@ export function door3(): CourseLayout {
 }
 
 export function door4(): CourseLayout {
-  const b = new Builder();
+  const b = new Builder(4);
   b.flat(900, true);
   b.branches();
   b.flat(300, true);
@@ -234,10 +235,9 @@ export function door4(): CourseLayout {
 }
 
 export function door5(): CourseLayout {
-  const b = new Builder();
+  const b = new Builder(5);
   b.flat(900, true);
-  b.tunnel();
-  b.hurdle();
+  b.tunnelThenHurdle();
   b.flat(400, true);
   b.snowman();
   b.gap(110);
@@ -279,12 +279,13 @@ export function door5(): CourseLayout {
   b.snowman();
   b.flat(300, true);
   b.flat(500, true);
+  b.flat(300, true);
   b.finish();
   return b.build();
 }
 
 export function door6(): CourseLayout {
-  const b = new Builder();
+  const b = new Builder(6);
   b.flat(900, true);
   b.hurdle();
   b.snowman();
@@ -336,7 +337,7 @@ export function door6(): CourseLayout {
 }
 
 export function door7(): CourseLayout {
-  const b = new Builder();
+  const b = new Builder(7);
   b.flat(900, true);
   b.hurdle();
   b.snowman();
@@ -351,6 +352,7 @@ export function door7(): CourseLayout {
   b.checkpoint();
   b.branches();
   b.skyCookies(600);
+  b.flat(500, true);
   b.stairs(90, 170);
   b.flat(300, false);
   b.hurdle();
@@ -362,8 +364,7 @@ export function door7(): CourseLayout {
   b.checkpoint();
   b.aframe();
   b.flat(300, true);
-  b.tunnel(480);
-  b.hurdle();
+  b.tunnelThenHurdle(480);
   b.flat(300, false);
   b.branches();
   b.snowman();
@@ -378,7 +379,8 @@ export function door7(): CourseLayout {
   b.hurdle();
   b.flat(300, true);
   b.skyCookies(600);
-  b.tunnel();
+  b.skyCookies(500);
+  b.tunnelThenHurdle();
   b.aframe();
   b.flat(400, true);
   b.gap(140);

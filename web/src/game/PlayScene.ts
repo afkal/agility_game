@@ -2,7 +2,7 @@
 // no game rules of its own.
 
 import Phaser from 'phaser';
-import { JUMP_VELOCITY, SNOWMAN_HEIGHT, SNOWMAN_WIDTH, COOKIE_RADIUS, SNOWBALL_RADIUS, WORLD_HEIGHT, WORLD_WIDTH } from '../../shared/constants.ts';
+import { GROUND_TOP, TUNNEL_INNER_HEIGHT, JUMP_VELOCITY, SNOWMAN_HEIGHT, SNOWMAN_WIDTH, COOKIE_RADIUS, SNOWBALL_RADIUS, WORLD_HEIGHT, WORLD_WIDTH } from '../../shared/constants.ts';
 import { gapsOf, hurdleBox } from '../../shared/course.ts';
 import { type GameState, newGame, update } from '../../shared/game.ts';
 import type { Level } from '../../shared/levels/registry.ts';
@@ -237,7 +237,10 @@ export class PlayScene extends Phaser.Scene {
       art.drawCheckpoint(flag, x, false, this.finnish);
       return flag;
     });
-    this.cookieImages = layout.cookies.map((c) => this.add.image(c.x, art.sy(c.y), 'cookie').setDepth(5));
+    // Cookies inside a tunnel show through it, so the player knows to crawl.
+    const inTunnel = (c: { x: number; y: number }) =>
+      c.y < GROUND_TOP + TUNNEL_INNER_HEIGHT && layout.tunnels.some((t) => c.x > t.x0 && c.x < t.x1);
+    this.cookieImages = layout.cookies.map((c) => this.add.image(c.x, art.sy(c.y), 'cookie').setDepth(inTunnel(c) ? 12 : 5));
   }
 
   private createDog(): void {

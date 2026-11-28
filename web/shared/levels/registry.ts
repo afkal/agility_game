@@ -36,12 +36,12 @@ const door = (day: number, name: string, build: () => CourseLayout, mood?: Mood)
 
 export const LEVELS: readonly Level[] = [
   door(1, 'Joulurata', door1),
-  door(2, 'Lumipallorata', door2),
-  door(3, 'Lumiukkojen pelto', door3),
+  door(2, 'Lumipallot', door2),
+  door(3, 'Lumiukot', door3),
   door(4, 'Kuusikko', door4),
-  door(5, 'Putkirata', door5),
-  door(6, 'Itsenäisyyspäivän rata', door6, 'finnish'),
-  door(7, 'Viikon finaali', door7),
+  door(5, 'Putket', door5),
+  door(6, 'Itsenäisyyspäivä', door6, 'finnish'),
+  door(7, 'Piparitalkoot', door7),
 ];
 
 /**
